@@ -1,0 +1,27 @@
+{
+  "name": "@internal/techdocs-editor",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": "22 || 24"
+  },
+  "scripts": {
+    "tsc": "tsc",
+    "build:all": "tsc && yarn workspaces foreach --all --topological-dev --no-private run build",
+    "clean": "yarn workspaces foreach --all --parallel run clean",
+    "test": "yarn workspaces foreach --all --parallel run test",
+    "lint": "yarn workspaces foreach --all --parallel run lint",
+    "prettier:check": "prettier --check .",
+    "prettier:write": "prettier --write ."
+  },
+  "workspaces": {
+    "packages": [
+      "plugins/*"
+    ]
+  },
+  "devDependencies": {
+    "react": "^18.0.2",
+    "react-dom": "^18.0.2",
+    "typescript": "~5.4.0"
+  }
+}

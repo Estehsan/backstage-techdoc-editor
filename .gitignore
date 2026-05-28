@@ -1,0 +1,19 @@
+node_modules
+dist
+dist-types
+coverage
+.cache
+.DS_Store
+*.log
+
+# Yarn
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Keep these
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions

@@ -1,0 +1,87 @@
+{
+  "name": "@estehsaan/backstage-plugin-techdocs-editor-backend",
+  "version": "0.1.0",
+  "description": "Backend plugin for the TechDocs in-app editor",
+  "backstage": {
+    "role": "backend-plugin",
+    "pluginId": "techdocs-editor"
+  },
+  "keywords": [
+    "backstage",
+    "backstage-plugin",
+    "techdocs",
+    "editor",
+    "backend"
+  ],
+  "homepage": "https://github.com/Estehsan/backstage-techdoc-editor/tree/main/workspaces/techdocs-editor/plugins/techdocs-editor-backend#readme",
+  "publishConfig": {
+    "access": "public",
+    "main": "dist/index.cjs.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.cjs.js"
+      },
+      "./alpha": {
+        "types": "./dist/alpha.d.ts",
+        "default": "./dist/alpha.cjs.js"
+      },
+      "./package.json": "./package.json"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Estehsan/backstage-techdoc-editor",
+    "directory": "workspaces/techdocs-editor/plugins/techdocs-editor-backend"
+  },
+  "license": "Apache-2.0",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./alpha": "./src/alpha.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "config.d.ts"
+  ],
+  "configSchema": "config.d.ts",
+  "scripts": {
+    "build": "backstage-cli package build",
+    "clean": "backstage-cli package clean",
+    "lint": "backstage-cli package lint",
+    "prepack": "backstage-cli package prepack",
+    "postpack": "backstage-cli package postpack",
+    "start": "backstage-cli package start",
+    "test": "backstage-cli package test"
+  },
+  "dependencies": {
+    "@estehsaan/backstage-plugin-techdocs-editor-common": "workspace:^",
+    "@estehsaan/backstage-plugin-techdocs-editor-node": "workspace:^",
+    "@backstage/backend-plugin-api": "^1.7.0",
+    "@backstage/catalog-client": "^1.13.0",
+    "@backstage/catalog-model": "^1.7.6",
+    "@backstage/config": "^1.3.6",
+    "@backstage/errors": "^1.2.7",
+    "@backstage/integration": "^1.17.0",
+    "@backstage/plugin-permission-common": "^0.9.6",
+    "@backstage/plugin-techdocs-common": "^1.2.0",
+    "@backstage/plugin-techdocs-node": "^1.14.0",
+    "@gitbeaker/rest": "^42.0.0",
+    "express": "^4.17.1",
+    "express-promise-router": "^4.1.0",
+    "js-yaml": "^4.1.0",
+    "octokit": "^4.0.2",
+    "octokit-plugin-create-pull-request": "^6.0.1"
+  },
+  "devDependencies": {
+    "@backstage/backend-test-utils": "^1.11.1",
+    "@backstage/cli": "^0.36.0",
+    "@types/express": "^4.17.6",
+    "@types/js-yaml": "^4.0.0",
+    "@types/supertest": "^6.0.0",
+    "supertest": "^7.0.0"
+  }
+}

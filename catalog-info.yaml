@@ -1,0 +1,59 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: backstage-plugin-techdocs-editor
+  description: Frontend plugin for in-app TechDocs editing
+  annotations:
+    github.com/project-slug: Estehsan/backstage-techdoc-editor
+spec:
+  type: library
+  lifecycle: production
+  owner: user:default/estehsan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: backstage-plugin-techdocs-editor-backend
+  description: Backend plugin for in-app TechDocs editing
+  annotations:
+    github.com/project-slug: Estehsan/backstage-techdoc-editor
+spec:
+  type: library
+  lifecycle: production
+  owner: user:default/estehsan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: backstage-plugin-techdocs-editor-react
+  description: Shared React components for the TechDocs editor
+  annotations:
+    github.com/project-slug: Estehsan/backstage-techdoc-editor
+spec:
+  type: library
+  lifecycle: production
+  owner: user:default/estehsan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: backstage-plugin-techdocs-editor-node
+  description: Node-side extension point for custom VCS providers
+  annotations:
+    github.com/project-slug: Estehsan/backstage-techdoc-editor
+spec:
+  type: library
+  lifecycle: production
+  owner: user:default/estehsan
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: backstage-plugin-techdocs-editor-common
+  description: Shared types and permissions for TechDocs editor
+  annotations:
+    github.com/project-slug: Estehsan/backstage-techdoc-editor
+spec:
+  type: library
+  lifecycle: production
+  owner: user:default/estehsan

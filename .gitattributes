@@ -1,0 +1,12 @@
+# Byte-order mark and SH files
+*.sh text eol=lf
+
+# Binaries
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.eot binary
+*.ttf binary
+*.otf binary
