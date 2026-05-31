@@ -9,13 +9,13 @@
 
 ## Packages
 
-| Package | Description |
-|---------|-------------|
-| [`@estehsaan/backstage-plugin-techdocs-editor`](./workspaces/techdocs-editor/plugins/techdocs-editor) | Frontend plugin (NFS & classic) |
+| Package                                                                                                               | Description                               |
+| --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| [`@estehsaan/backstage-plugin-techdocs-editor`](./workspaces/techdocs-editor/plugins/techdocs-editor)                 | Frontend plugin (NFS & classic)           |
 | [`@estehsaan/backstage-plugin-techdocs-editor-backend`](./workspaces/techdocs-editor/plugins/techdocs-editor-backend) | Backend plugin (REST API + VCS providers) |
-| [`@estehsaan/backstage-plugin-techdocs-editor-react`](./workspaces/techdocs-editor/plugins/techdocs-editor-react) | Shared React components & API client |
-| [`@estehsaan/backstage-plugin-techdocs-editor-node`](./workspaces/techdocs-editor/plugins/techdocs-editor-node) | Extension point for custom VCS providers |
-| [`@estehsaan/backstage-plugin-techdocs-editor-common`](./workspaces/techdocs-editor/plugins/techdocs-editor-common) | Shared types and permissions |
+| [`@estehsaan/backstage-plugin-techdocs-editor-react`](./workspaces/techdocs-editor/plugins/techdocs-editor-react)     | Shared React components & API client      |
+| [`@estehsaan/backstage-plugin-techdocs-editor-node`](./workspaces/techdocs-editor/plugins/techdocs-editor-node)       | Extension point for custom VCS providers  |
+| [`@estehsaan/backstage-plugin-techdocs-editor-common`](./workspaces/techdocs-editor/plugins/techdocs-editor-common)   | Shared types and permissions              |
 
 ## Installation
 
@@ -42,7 +42,7 @@ app.add(techdocsEditorPlugin);
 import { TechDocsEditPageAddon } from '@estehsaan/backstage-plugin-techdocs-editor';
 
 // Inside TechDocsReaderPage:
-<TechDocsEditPageAddon />
+<TechDocsEditPageAddon />;
 ```
 
 ## Features

@@ -64,7 +64,7 @@ function TechDocsEditPageAddonComponent() {
     ?.querySelector('link[rel="canonical"]')
     ?.getAttribute('href');
   const docFile = canonicalUrl
-    ? canonicalUrl.split('/').pop()?.replace('.html', '.md') ?? ''
+    ? (canonicalUrl.split('/').pop()?.replace('.html', '.md') ?? '')
     : '';
   const editorUrl = docFile
     ? `${editorPath}?file=${encodeURIComponent(docFile)}`

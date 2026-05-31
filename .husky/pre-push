@@ -1,0 +1,7 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Run Prettier and stage any formatting changes so pushes include them
+yarn prettier:write
+
+git add -A || true

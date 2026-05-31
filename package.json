@@ -17,6 +17,7 @@
     "fix": "yarn backstage-cli repo fix",
     "lint": "yarn backstage-cli repo lint",
     "new": "backstage-cli new --scope @estehsaan",
+    "prepare": "husky",
     "prettier:check": "prettier --check .",
     "prettier:write": "prettier --write .",
     "test": "yarn backstage-cli repo test",

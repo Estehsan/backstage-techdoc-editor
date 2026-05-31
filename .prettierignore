@@ -1,0 +1,10 @@
+# Auto-generated changelogs — managed by semantic-release
+CHANGELOG.md
+**/CHANGELOG.md
+
+# Build outputs
+dist/
+dist-types/
+
+# Yarn
+.yarn/

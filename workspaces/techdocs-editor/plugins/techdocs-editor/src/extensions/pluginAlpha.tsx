@@ -18,6 +18,8 @@ import {
   createFrontendPlugin,
   PageBlueprint,
   ApiBlueprint,
+  ExtensionDefinition,
+  FrontendPlugin,
 } from '@backstage/frontend-plugin-api';
 import { discoveryApiRef, fetchApiRef } from '@backstage/core-plugin-api';
 import { EntityContentBlueprint } from '@backstage/plugin-catalog-react/alpha';
@@ -97,19 +99,20 @@ const EditorTabContent = () => {
   );
 };
 
-export const techdocsEditorAddonExtension = EntityContentBlueprint.make({
-  name: 'techdocs-editor',
-  params: {
-    path: '/edit-docs',
-    title: 'Edit Docs',
-    filter: 'has:annotation:backstage.io/techdocs-ref',
-    loader: async () => <EditorTabContent />,
-  },
-});
+export const techdocsEditorAddonExtension: ExtensionDefinition =
+  EntityContentBlueprint.make({
+    name: 'techdocs-editor',
+    params: {
+      path: '/edit-docs',
+      title: 'Edit Docs',
+      filter: 'has:annotation:backstage.io/techdocs-ref',
+      loader: async () => <EditorTabContent />,
+    },
+  });
 
 // ── Plugin ───────────────────────────────────────────────────────────────────
 
-const techdocsEditorAlphaPlugin = createFrontendPlugin({
+const techdocsEditorAlphaPlugin: FrontendPlugin = createFrontendPlugin({
   pluginId: 'techdocs-editor',
   extensions: [
     techdocsEditorApiExtension,

@@ -32,6 +32,7 @@ yarn prettier:write .
 ## Architecture
 
 The backend plugin (`techdocsEditorPlugin`) exposes REST endpoints for:
+
 - Reading mkdocs.yml config
 - Listing documentation files
 - Reading file content (with ETag for conflict detection)
@@ -40,6 +41,7 @@ The backend plugin (`techdocsEditorPlugin`) exposes REST endpoints for:
 VCS providers (GitHub, GitLab) are registered via an extension point and implemented in the `techdocsEditorModuleDefaultProviders` backend module.
 
 The frontend plugin provides:
+
 - `TechDocsEditPageAddon` — classic TechDocs Subheader addon
 - `techdocsEditorExtensionPage` — NFS standalone editor page
 - `techdocsEditorAddonExtension` — NFS entity content tab

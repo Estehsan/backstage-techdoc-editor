@@ -4,9 +4,7 @@
     "rootDir": ".",
     "outDir": "dist-types"
   },
-  "include": [
-    "plugins/*/src/**/*"
-  ],
+  "include": ["plugins/*/src/**/*"],
   "exclude": [
     "node_modules",
     "dist",

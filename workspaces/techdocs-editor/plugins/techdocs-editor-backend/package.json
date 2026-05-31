@@ -58,8 +58,6 @@
     "test": "backstage-cli package test"
   },
   "dependencies": {
-    "@estehsaan/backstage-plugin-techdocs-editor-common": "workspace:^",
-    "@estehsaan/backstage-plugin-techdocs-editor-node": "workspace:^",
     "@backstage/backend-plugin-api": "^1.7.0",
     "@backstage/catalog-client": "^1.13.0",
     "@backstage/catalog-model": "^1.7.6",
@@ -67,8 +65,10 @@
     "@backstage/errors": "^1.2.7",
     "@backstage/integration": "^1.17.0",
     "@backstage/plugin-permission-common": "^0.9.6",
-    "@backstage/plugin-techdocs-common": "^1.2.0",
+    "@backstage/plugin-techdocs-common": "^0.1.1",
     "@backstage/plugin-techdocs-node": "^1.14.0",
+    "@estehsaan/backstage-plugin-techdocs-editor-common": "workspace:^",
+    "@estehsaan/backstage-plugin-techdocs-editor-node": "workspace:^",
     "@gitbeaker/rest": "^42.0.0",
     "express": "^4.17.1",
     "express-promise-router": "^4.1.0",

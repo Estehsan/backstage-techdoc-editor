@@ -117,7 +117,7 @@ function NewPageDialog({
     !validationError && existingPaths.has(value.trim())
       ? 'A file with that path already exists.'
       : undefined;
-  const error = touched ? validationError ?? duplicateError : undefined;
+  const error = touched ? (validationError ?? duplicateError) : undefined;
 
   const handleCreate = () => {
     setTouched(true);

@@ -49,8 +49,8 @@
     "test": "backstage-cli package test"
   },
   "dependencies": {
-    "@estehsaan/backstage-plugin-techdocs-editor-common": "workspace:^",
-    "@backstage/backend-plugin-api": "^1.7.0"
+    "@backstage/backend-plugin-api": "^1.7.0",
+    "@estehsaan/backstage-plugin-techdocs-editor-common": "workspace:^"
   },
   "devDependencies": {
     "@backstage/cli": "^0.36.0"
