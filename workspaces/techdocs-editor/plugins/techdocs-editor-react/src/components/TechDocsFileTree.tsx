@@ -138,6 +138,7 @@ function NewPageDialog({
       <DialogTitle>Create New Page</DialogTitle>
       <DialogContent>
         <TextField
+          // eslint-disable-next-line jsx-a11y/no-autofocus
           autoFocus
           fullWidth
           label="File path"

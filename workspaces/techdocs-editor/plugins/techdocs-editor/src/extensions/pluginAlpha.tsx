@@ -70,6 +70,9 @@ const EditorPageContent = () => {
   return <TechDocsEditorPage entityRef={entityRef} initialPath={initialPath} />;
 };
 
+/**
+ * @alpha
+ */
 export const techdocsEditorExtensionPage = PageBlueprint.make({
   name: 'techdocs-editor',
   params: {
@@ -99,6 +102,9 @@ const EditorTabContent = () => {
   );
 };
 
+/**
+ * @alpha
+ */
 export const techdocsEditorAddonExtension: ExtensionDefinition =
   EntityContentBlueprint.make({
     name: 'techdocs-editor',
@@ -112,6 +118,9 @@ export const techdocsEditorAddonExtension: ExtensionDefinition =
 
 // ── Plugin ───────────────────────────────────────────────────────────────────
 
+/**
+ * @alpha
+ */
 const techdocsEditorAlphaPlugin: FrontendPlugin = createFrontendPlugin({
   pluginId: 'techdocs-editor',
   extensions: [
