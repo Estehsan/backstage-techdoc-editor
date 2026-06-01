@@ -156,6 +156,7 @@ export function TechDocsEditorPage({
       })
       .catch(e => setError(e))
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entityRef.name, entityRef.kind, entityRef.namespace]);
 
   useEffect(() => {
@@ -177,6 +178,7 @@ export function TechDocsEditorPage({
       })
       .catch(e => setFileError(e))
       .finally(() => setFileLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPath, branch]);
 
   const handleContentChange = useCallback(
