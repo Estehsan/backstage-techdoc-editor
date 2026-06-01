@@ -4,7 +4,14 @@
   "description": "Node-side extension point for custom VCS providers for the TechDocs editor",
   "backstage": {
     "role": "node-library",
-    "pluginId": "techdocs-editor"
+    "pluginId": "techdocs-editor",
+    "pluginPackages": [
+      "@estehsaan/backstage-plugin-techdocs-editor",
+      "@estehsaan/backstage-plugin-techdocs-editor-backend",
+      "@estehsaan/backstage-plugin-techdocs-editor-common",
+      "@estehsaan/backstage-plugin-techdocs-editor-node",
+      "@estehsaan/backstage-plugin-techdocs-editor-react"
+    ]
   },
   "keywords": [
     "backstage",
@@ -15,8 +22,6 @@
   "homepage": "https://github.com/Estehsan/backstage-techdoc-editor/tree/main/workspaces/techdocs-editor/plugins/techdocs-editor-node#readme",
   "publishConfig": {
     "access": "public",
-    "main": "dist/index.cjs.js",
-    "types": "dist/index.d.ts",
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
@@ -37,6 +42,13 @@
     ".": "./src/index.ts",
     "./package.json": "./package.json"
   },
+  "typesVersions": {
+    "*": {
+      "package.json": [
+        "package.json"
+      ]
+    }
+  },
   "files": [
     "dist"
   ],
@@ -50,7 +62,7 @@
   },
   "dependencies": {
     "@backstage/backend-plugin-api": "^1.7.0",
-    "@estehsaan/backstage-plugin-techdocs-editor-common": "workspace:^"
+    "@estehsaan/backstage-plugin-techdocs-editor-common": "^0.1.0"
   },
   "devDependencies": {
     "@backstage/cli": "^0.36.0"

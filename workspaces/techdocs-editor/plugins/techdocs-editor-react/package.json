@@ -4,7 +4,14 @@
   "description": "Shared React components and API client for the TechDocs in-app editor",
   "backstage": {
     "role": "web-library",
-    "pluginId": "techdocs-editor"
+    "pluginId": "techdocs-editor",
+    "pluginPackages": [
+      "@estehsaan/backstage-plugin-techdocs-editor",
+      "@estehsaan/backstage-plugin-techdocs-editor-backend",
+      "@estehsaan/backstage-plugin-techdocs-editor-common",
+      "@estehsaan/backstage-plugin-techdocs-editor-node",
+      "@estehsaan/backstage-plugin-techdocs-editor-react"
+    ]
   },
   "keywords": [
     "backstage",
@@ -16,8 +23,6 @@
   "homepage": "https://github.com/Estehsan/backstage-techdoc-editor/tree/main/workspaces/techdocs-editor/plugins/techdocs-editor-react#readme",
   "publishConfig": {
     "access": "public",
-    "main": "dist/index.esm.js",
-    "types": "dist/index.d.ts",
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
@@ -38,9 +43,17 @@
     ".": "./src/index.ts",
     "./package.json": "./package.json"
   },
+  "typesVersions": {
+    "*": {
+      "package.json": [
+        "package.json"
+      ]
+    }
+  },
   "files": [
     "dist"
   ],
+  "sideEffects": false,
   "scripts": {
     "build": "backstage-cli package build",
     "clean": "backstage-cli package clean",
@@ -56,7 +69,7 @@
     "@backstage/core-plugin-api": "^1.12.3",
     "@backstage/plugin-catalog-react": "^2.0.0",
     "@backstage/plugin-techdocs-common": "^0.1.1",
-    "@estehsaan/backstage-plugin-techdocs-editor-common": "workspace:^",
+    "@estehsaan/backstage-plugin-techdocs-editor-common": "^0.1.0",
     "@material-ui/core": "^4.12.4",
     "@material-ui/icons": "^4.11.3",
     "@toast-ui/editor": "^3.2.2",

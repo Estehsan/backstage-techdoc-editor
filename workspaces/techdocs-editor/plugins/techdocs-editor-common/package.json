@@ -22,8 +22,6 @@
   "homepage": "https://github.com/Estehsan/backstage-techdoc-editor/tree/main/workspaces/techdocs-editor/plugins/techdocs-editor-common#readme",
   "publishConfig": {
     "access": "public",
-    "main": "dist/index.cjs.js",
-    "types": "dist/index.d.ts",
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
@@ -44,9 +42,17 @@
     ".": "./src/index.ts",
     "./package.json": "./package.json"
   },
+  "typesVersions": {
+    "*": {
+      "package.json": [
+        "package.json"
+      ]
+    }
+  },
   "files": [
     "dist"
   ],
+  "sideEffects": false,
   "scripts": {
     "build": "backstage-cli package build",
     "clean": "backstage-cli package clean",

@@ -4,7 +4,14 @@
   "description": "Backend plugin for the TechDocs in-app editor",
   "backstage": {
     "role": "backend-plugin",
-    "pluginId": "techdocs-editor"
+    "pluginId": "techdocs-editor",
+    "pluginPackages": [
+      "@estehsaan/backstage-plugin-techdocs-editor",
+      "@estehsaan/backstage-plugin-techdocs-editor-backend",
+      "@estehsaan/backstage-plugin-techdocs-editor-common",
+      "@estehsaan/backstage-plugin-techdocs-editor-node",
+      "@estehsaan/backstage-plugin-techdocs-editor-react"
+    ]
   },
   "keywords": [
     "backstage",
@@ -16,8 +23,6 @@
   "homepage": "https://github.com/Estehsan/backstage-techdoc-editor/tree/main/workspaces/techdocs-editor/plugins/techdocs-editor-backend#readme",
   "publishConfig": {
     "access": "public",
-    "main": "dist/index.cjs.js",
-    "types": "dist/index.d.ts",
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
@@ -43,6 +48,16 @@
     "./alpha": "./src/alpha.ts",
     "./package.json": "./package.json"
   },
+  "typesVersions": {
+    "*": {
+      "alpha": [
+        "src/alpha.ts"
+      ],
+      "package.json": [
+        "package.json"
+      ]
+    }
+  },
   "files": [
     "dist",
     "config.d.ts"
@@ -67,8 +82,8 @@
     "@backstage/plugin-permission-common": "^0.9.6",
     "@backstage/plugin-techdocs-common": "^0.1.1",
     "@backstage/plugin-techdocs-node": "^1.14.0",
-    "@estehsaan/backstage-plugin-techdocs-editor-common": "workspace:^",
-    "@estehsaan/backstage-plugin-techdocs-editor-node": "workspace:^",
+    "@estehsaan/backstage-plugin-techdocs-editor-common": "^0.1.0",
+    "@estehsaan/backstage-plugin-techdocs-editor-node": "^0.1.0",
     "@gitbeaker/rest": "^42.0.0",
     "express": "^4.17.1",
     "express-promise-router": "^4.1.0",

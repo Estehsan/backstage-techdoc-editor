@@ -138,7 +138,6 @@ function NewPageDialog({
       <DialogTitle>Create New Page</DialogTitle>
       <DialogContent>
         <TextField
-          autoFocus
           fullWidth
           label="File path"
           placeholder="e.g. getting-started.md or guides/setup.md"
