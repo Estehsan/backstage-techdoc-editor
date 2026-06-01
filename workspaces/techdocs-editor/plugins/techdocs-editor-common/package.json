@@ -1,6 +1,6 @@
 {
   "name": "@estehsaan/backstage-plugin-techdocs-editor-common",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Common types and permissions for the TechDocs in-app editor plugin",
   "backstage": {
     "role": "common-library",
