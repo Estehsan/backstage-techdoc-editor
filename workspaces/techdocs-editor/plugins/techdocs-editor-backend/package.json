@@ -1,6 +1,6 @@
 {
   "name": "@estehsaan/backstage-plugin-techdocs-editor-backend",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Backend plugin for the TechDocs in-app editor",
   "backstage": {
     "role": "backend-plugin",
@@ -82,8 +82,8 @@
     "@backstage/plugin-permission-common": "^0.9.6",
     "@backstage/plugin-techdocs-common": "^0.1.1",
     "@backstage/plugin-techdocs-node": "^1.14.0",
-    "@estehsaan/backstage-plugin-techdocs-editor-common": "^0.1.0",
-    "@estehsaan/backstage-plugin-techdocs-editor-node": "^0.1.0",
+    "@estehsaan/backstage-plugin-techdocs-editor-common": "^1.0.0",
+    "@estehsaan/backstage-plugin-techdocs-editor-node": "^1.0.0",
     "@gitbeaker/rest": "^42.0.0",
     "express": "^4.17.1",
     "express-promise-router": "^4.1.0",

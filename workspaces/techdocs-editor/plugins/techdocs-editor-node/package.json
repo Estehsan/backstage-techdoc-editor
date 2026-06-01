@@ -1,6 +1,6 @@
 {
   "name": "@estehsaan/backstage-plugin-techdocs-editor-node",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Node-side extension point for custom VCS providers for the TechDocs editor",
   "backstage": {
     "role": "node-library",
@@ -62,7 +62,7 @@
   },
   "dependencies": {
     "@backstage/backend-plugin-api": "^1.7.0",
-    "@estehsaan/backstage-plugin-techdocs-editor-common": "^0.1.0"
+    "@estehsaan/backstage-plugin-techdocs-editor-common": "^1.0.0"
   },
   "devDependencies": {
     "@backstage/cli": "^0.36.0"
