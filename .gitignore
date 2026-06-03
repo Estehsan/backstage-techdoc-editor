@@ -5,6 +5,7 @@ coverage
 .cache
 .DS_Store
 *.log
+graphify-out/
 
 # Yarn
 .yarn/cache
