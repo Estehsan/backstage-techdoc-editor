@@ -64,6 +64,10 @@ jobs:
         env:
           CI: true
 
+      - name: Verify publishable package count
+        run: |
+          node -e "const fs=require('fs');const path=require('path');const root=path.resolve('workspaces/techdocs-editor/plugins');const expected=5;const publishable=fs.readdirSync(root,{withFileTypes:true}).filter(d=>d.isDirectory()).map(d=>path.join(root,d.name,'package.json')).filter(p=>fs.existsSync(p)).map(p=>JSON.parse(fs.readFileSync(p,'utf8'))).filter(pkg=>!pkg.private && pkg.publishConfig && pkg.publishConfig.access==='public');if(publishable.length!==expected){console.error('Expected '+expected+' publishable packages, found '+publishable.length+': '+publishable.map(p=>p.name).join(', '));process.exit(1);}console.log('Publishable package count verified ('+publishable.length+'): '+publishable.map(p=>p.name).join(', '));"
+
       - name: Release
         run: npx semantic-release
         env:
