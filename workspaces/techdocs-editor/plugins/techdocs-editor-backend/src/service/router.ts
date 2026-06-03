@@ -26,7 +26,7 @@ import {
   UserInfoService,
 } from '@backstage/backend-plugin-api';
 import { InputError, NotFoundError, NotAllowedError } from '@backstage/errors';
-import { posix as posixPath } from 'path';
+import { posix as posixPath } from 'node:path';
 import { ScmIntegrations } from '@backstage/integration';
 import { parseEntityRef, stringifyEntityRef } from '@backstage/catalog-model';
 import {

@@ -16,14 +16,20 @@ import { JSX as JSX_2 } from 'react';
 import { OverridableExtensionDefinition } from '@backstage/frontend-plugin-api';
 import { RouteRef } from '@backstage/frontend-plugin-api';
 
-// @alpha (undocumented)
+// Warning: (ae-missing-release-tag) "techdocsEditorAddonExtension" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
 export const techdocsEditorAddonExtension: ExtensionDefinition;
 
-// @alpha (undocumented)
+// Warning: (ae-missing-release-tag) "techdocsEditorAlphaPlugin" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
 const techdocsEditorAlphaPlugin: FrontendPlugin;
 export default techdocsEditorAlphaPlugin;
 
-// @alpha (undocumented)
+// Warning: (ae-missing-release-tag) "techdocsEditorExtensionPage" is part of the package's API, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
 export const techdocsEditorExtensionPage: OverridableExtensionDefinition<{
   kind: 'page';
   name: 'techdocs-editor';
@@ -32,12 +38,11 @@ export const techdocsEditorExtensionPage: OverridableExtensionDefinition<{
     title: string | undefined;
   };
   configInput: {
-    path?: string | undefined;
     title?: string | undefined;
+    path?: string | undefined;
   };
   output:
     | ExtensionDataRef<string, 'core.routing.path', {}>
-    | ExtensionDataRef<JSX_2.Element, 'core.reactElement', {}>
     | ExtensionDataRef<
         RouteRef<AnyRouteRefParams>,
         'core.routing.ref',
@@ -45,6 +50,7 @@ export const techdocsEditorExtensionPage: OverridableExtensionDefinition<{
           optional: true;
         }
       >
+    | ExtensionDataRef<JSX_2.Element, 'core.reactElement', {}>
     | ExtensionDataRef<
         string,
         'core.title',

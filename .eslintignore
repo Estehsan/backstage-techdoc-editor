@@ -1,0 +1,17 @@
+# Build outputs
+dist/
+dist-types/
+
+# Declaration files (handled by TypeScript)
+*.d.ts
+
+# Config files
+*.config.js
+*.config.ts
+
+# Yarn
+.yarn/
+node_modules/
+
+# API reports
+*.api.md

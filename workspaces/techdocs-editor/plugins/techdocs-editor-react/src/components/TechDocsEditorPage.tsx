@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Button,
   ButtonGroup,
@@ -141,9 +141,21 @@ export function TechDocsEditorPage({
   const [sourceMode, setSourceMode] = useState(false);
   const [submitOpen, setSubmitOpen] = useState(false);
 
+  const requestEntityRef = useMemo(
+    () => ({
+      kind: entityRef.kind,
+      name: entityRef.name,
+      namespace: entityRef.namespace,
+    }),
+    [entityRef.kind, entityRef.name, entityRef.namespace],
+  );
+
   useEffect(() => {
     setLoading(true);
-    Promise.all([api.getFileTree(entityRef), api.getMkDocsConfig(entityRef)])
+    Promise.all([
+      api.getFileTree(requestEntityRef),
+      api.getMkDocsConfig(requestEntityRef),
+    ])
       .then(([tree, config]) => {
         setBranch(tree.branch);
         setMkdocsConfig(config);
@@ -156,8 +168,7 @@ export function TechDocsEditorPage({
       })
       .catch(e => setError(e))
       .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entityRef.name, entityRef.kind, entityRef.namespace]);
+  }, [api, requestEntityRef, initialPath]);
 
   useEffect(() => {
     if (!selectedPath || !branch) return;
@@ -171,15 +182,14 @@ export function TechDocsEditorPage({
     setFileLoading(true);
     setFileError(null);
     api
-      .getFile(entityRef, selectedPath, branch)
+      .getFile(requestEntityRef, selectedPath, branch)
       .then(({ content, etag }) => {
         setFileContent(content);
         originalEtags.current.set(selectedPath, etag);
       })
       .catch(e => setFileError(e))
       .finally(() => setFileLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPath, branch]);
+  }, [api, requestEntityRef, selectedPath, branch, editedFiles]);
 
   const handleContentChange = useCallback(
     (markdown: string) => {
