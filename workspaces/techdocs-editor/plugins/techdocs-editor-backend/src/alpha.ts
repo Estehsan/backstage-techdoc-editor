@@ -15,3 +15,7 @@
  */
 
 export { techdocsEditorModuleDefaultProviders } from './module';
+
+export default {
+	techdocsEditorModuleDefaultProviders,
+};
