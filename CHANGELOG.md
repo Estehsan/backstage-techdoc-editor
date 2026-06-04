@@ -1,3 +1,11 @@
+## [1.0.1](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.0.0...techdocs-editor-v1.0.1) (2026-06-04)
+
+
+### Bug Fixes
+
+* **release:** switch publish target from GitHub Packages to npmjs.com ([fca7259](https://github.com/Estehsan/backstage-techdoc-editor/commit/fca725990c8479546c0c46b5304a3301c2dcf189))
+* switch badges to github/package-json/v and fix alpha default export ([3116e31](https://github.com/Estehsan/backstage-techdoc-editor/commit/3116e318e0977021603ce9036b23adc0ac8c7d36))
+
 # 1.0.0 (2026-06-03)
 
 

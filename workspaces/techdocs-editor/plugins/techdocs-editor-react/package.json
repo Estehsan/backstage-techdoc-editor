@@ -1,6 +1,6 @@
 {
   "name": "@estehsaan/backstage-plugin-techdocs-editor-react",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shared React components and API client for the TechDocs in-app editor",
   "backstage": {
     "role": "web-library",
