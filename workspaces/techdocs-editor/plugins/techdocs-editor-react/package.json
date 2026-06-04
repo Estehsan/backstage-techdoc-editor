@@ -1,7 +1,7 @@
 {
   "name": "@estehsaan/backstage-plugin-techdocs-editor-react",
   "version": "1.0.2",
-  "description": "Shared React components and API client for the TechDocs in-app editor",
+  "description": "Shared React components, hooks, and API client for the TechDocs editor plugin",
   "backstage": {
     "role": "web-library",
     "pluginId": "techdocs-editor",
@@ -18,7 +18,9 @@
     "backstage-plugin",
     "techdocs",
     "editor",
-    "react"
+    "react",
+    "ui",
+    "developer-portal"
   ],
   "homepage": "https://github.com/Estehsan/backstage-techdoc-editor/tree/main/workspaces/techdocs-editor/plugins/techdocs-editor-react#readme",
   "publishConfig": {
@@ -35,6 +37,9 @@
     "type": "git",
     "url": "https://github.com/Estehsan/backstage-techdoc-editor",
     "directory": "workspaces/techdocs-editor/plugins/techdocs-editor-react"
+  },
+  "bugs": {
+    "url": "https://github.com/Estehsan/backstage-techdoc-editor/issues"
   },
   "license": "Apache-2.0",
   "main": "src/index.ts",

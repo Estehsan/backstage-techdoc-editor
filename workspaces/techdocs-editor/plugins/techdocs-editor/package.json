@@ -1,7 +1,7 @@
 {
   "name": "@estehsaan/backstage-plugin-techdocs-editor",
   "version": "1.0.2",
-  "description": "Backstage plugin for editing TechDocs documentation in-app",
+  "description": "Frontend plugin for editing and previewing TechDocs documentation inside Backstage",
   "backstage": {
     "role": "frontend-plugin",
     "pluginId": "techdocs-editor",
@@ -17,7 +17,9 @@
     "backstage",
     "backstage-plugin",
     "techdocs",
-    "editor"
+    "editor",
+    "frontend",
+    "developer-portal"
   ],
   "homepage": "https://github.com/Estehsan/backstage-techdoc-editor/tree/main/workspaces/techdocs-editor/plugins/techdocs-editor#readme",
   "publishConfig": {
@@ -38,6 +40,9 @@
     "type": "git",
     "url": "https://github.com/Estehsan/backstage-techdoc-editor",
     "directory": "workspaces/techdocs-editor/plugins/techdocs-editor"
+  },
+  "bugs": {
+    "url": "https://github.com/Estehsan/backstage-techdoc-editor/issues"
   },
   "license": "Apache-2.0",
   "main": "src/index.ts",

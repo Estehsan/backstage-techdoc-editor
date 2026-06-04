@@ -1,7 +1,7 @@
 {
   "name": "@estehsaan/backstage-plugin-techdocs-editor-common",
   "version": "1.0.2",
-  "description": "Common types and permissions for the TechDocs in-app editor plugin",
+  "description": "Shared types, contracts, and permission definitions for the TechDocs editor plugin",
   "backstage": {
     "role": "common-library",
     "pluginId": "techdocs-editor",
@@ -17,7 +17,10 @@
     "backstage",
     "backstage-plugin",
     "techdocs",
-    "editor"
+    "editor",
+    "common",
+    "permissions",
+    "developer-portal"
   ],
   "homepage": "https://github.com/Estehsan/backstage-techdoc-editor/tree/main/workspaces/techdocs-editor/plugins/techdocs-editor-common#readme",
   "publishConfig": {
@@ -34,6 +37,9 @@
     "type": "git",
     "url": "https://github.com/Estehsan/backstage-techdoc-editor",
     "directory": "workspaces/techdocs-editor/plugins/techdocs-editor-common"
+  },
+  "bugs": {
+    "url": "https://github.com/Estehsan/backstage-techdoc-editor/issues"
   },
   "license": "Apache-2.0",
   "main": "src/index.ts",

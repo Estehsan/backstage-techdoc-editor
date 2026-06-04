@@ -1,7 +1,7 @@
 {
   "name": "@estehsaan/backstage-plugin-techdocs-editor-node",
   "version": "1.0.2",
-  "description": "Node-side extension point for custom VCS providers for the TechDocs editor",
+  "description": "Node library that defines extension points for custom TechDocs editor VCS providers",
   "backstage": {
     "role": "node-library",
     "pluginId": "techdocs-editor",
@@ -17,7 +17,10 @@
     "backstage",
     "backstage-plugin",
     "techdocs",
-    "editor"
+    "editor",
+    "node",
+    "vcs",
+    "developer-portal"
   ],
   "homepage": "https://github.com/Estehsan/backstage-techdoc-editor/tree/main/workspaces/techdocs-editor/plugins/techdocs-editor-node#readme",
   "publishConfig": {
@@ -34,6 +37,9 @@
     "type": "git",
     "url": "https://github.com/Estehsan/backstage-techdoc-editor",
     "directory": "workspaces/techdocs-editor/plugins/techdocs-editor-node"
+  },
+  "bugs": {
+    "url": "https://github.com/Estehsan/backstage-techdoc-editor/issues"
   },
   "license": "Apache-2.0",
   "main": "src/index.ts",
