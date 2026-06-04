@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.0.1...techdocs-editor-v1.0.2) (2026-06-04)
+
+
+### Bug Fixes
+
+* **release:** use GH_PAT for semantic-release GitHub auth ([034a80b](https://github.com/Estehsan/backstage-techdoc-editor/commit/034a80b73ca80f1eb28eae32f648d6ae4494a221))
+
 ## [1.0.1](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.0.0...techdocs-editor-v1.0.1) (2026-06-04)
 
 
