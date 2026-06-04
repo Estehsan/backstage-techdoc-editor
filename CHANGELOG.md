@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.0.2...techdocs-editor-v1.0.3) (2026-06-04)
+
+
+### Bug Fixes
+
+* **metadata:** enrich npm package details for all techdocs packages ([a626735](https://github.com/Estehsan/backstage-techdoc-editor/commit/a626735c5783a21ffe121643aac2bc6f0091a601))
+
 ## [1.0.2](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.0.1...techdocs-editor-v1.0.2) (2026-06-04)
 
 

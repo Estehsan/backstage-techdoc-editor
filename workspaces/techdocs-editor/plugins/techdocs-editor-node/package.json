@@ -1,6 +1,6 @@
 {
   "name": "@estehsaan/backstage-plugin-techdocs-editor-node",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Node library that defines extension points for custom TechDocs editor VCS providers",
   "backstage": {
     "role": "node-library",
