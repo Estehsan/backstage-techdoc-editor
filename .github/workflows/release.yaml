@@ -19,7 +19,6 @@ jobs:
       pull-requests: write
       issues: write
       id-token: write
-      packages: write
 
     steps:
       - name: Checkout
@@ -32,7 +31,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: https://npm.pkg.github.com
+          registry-url: https://registry.npmjs.org
 
       - name: Enable Corepack
         run: corepack enable
@@ -70,21 +69,11 @@ jobs:
         run: |
           node -e "const fs=require('fs');const path=require('path');const root=path.resolve('workspaces/techdocs-editor/plugins');const expected=5;const publishable=fs.readdirSync(root,{withFileTypes:true}).filter(d=>d.isDirectory()).map(d=>path.join(root,d.name,'package.json')).filter(p=>fs.existsSync(p)).map(p=>JSON.parse(fs.readFileSync(p,'utf8'))).filter(pkg=>!pkg.private && pkg.publishConfig && pkg.publishConfig.access==='public');if(publishable.length!==expected){console.error('Expected '+expected+' publishable packages, found '+publishable.length+': '+publishable.map(p=>p.name).join(', '));process.exit(1);}console.log('Publishable package count verified ('+publishable.length+'): '+publishable.map(p=>p.name).join(', '));"
 
-      - name: Configure npm auth for GitHub Packages
-        run: |
-          cat << 'EOF' > ~/.npmrc
-          @estehsaan:registry=https://npm.pkg.github.com
-          //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
-          always-auth=true
-          EOF
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Release
         run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          YARN_NPM_REGISTRY_SERVER: https://npm.pkg.github.com
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
