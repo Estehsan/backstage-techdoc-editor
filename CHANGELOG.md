@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.0.3...techdocs-editor-v1.0.4) (2026-06-05)
+
+
+### Bug Fixes
+
+* publish updated READMEs and bug fixes missed by v1.0.3 ([44b8f4d](https://github.com/Estehsan/backstage-techdoc-editor/commit/44b8f4d7ed4e41d6be19e01b41be2eca5e36dc55))
+
 ## [1.0.3](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.0.2...techdocs-editor-v1.0.3) (2026-06-04)
 
 
