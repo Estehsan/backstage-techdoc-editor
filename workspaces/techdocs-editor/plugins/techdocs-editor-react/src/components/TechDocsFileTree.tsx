@@ -214,7 +214,7 @@ function TreeNodeItem({
           <List component="div" disablePadding>
             {node.children!.map((child: DocTreeNode, idx: number) => (
               <TreeNodeItem
-                key={idx}
+                key={child.path ?? child.title ?? idx}
                 node={child}
                 depth={depth + 1}
                 selectedPath={selectedPath}
@@ -313,7 +313,7 @@ export function TechDocsFileTree({
       <List dense component="nav">
         {nodes.map((node, idx) => (
           <TreeNodeItem
-            key={idx}
+            key={node.path ?? node.title ?? idx}
             node={node}
             depth={0}
             selectedPath={selectedPath}
