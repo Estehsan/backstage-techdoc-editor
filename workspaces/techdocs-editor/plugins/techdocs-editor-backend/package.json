@@ -65,7 +65,8 @@
   },
   "files": [
     "dist",
-    "config.d.ts"
+    "config.d.ts",
+    "README.md"
   ],
   "configSchema": "config.d.ts",
   "scripts": {
