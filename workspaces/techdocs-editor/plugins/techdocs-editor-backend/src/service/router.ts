@@ -169,8 +169,15 @@ export async function createRouter(
           filePath: 'mkdocs.yml',
         });
         mkdocsContent = result.content;
-      } catch {
-        // mkdocs.yml missing — return sensible defaults
+      } catch (err: unknown) {
+        // Only ignore a missing mkdocs.yml — rethrow network, auth, or other errors
+        if (
+          !err ||
+          typeof err !== 'object' ||
+          (err as { name?: string }).name !== 'NotFoundError'
+        ) {
+          throw err;
+        }
       }
 
       const parsed =

@@ -67,13 +67,19 @@ export function TechDocsMarkdownEditor({
   const [editorLoadError, setEditorLoadError] = useState<string | undefined>();
 
   useEffect(() => {
-    EditorPromise.then(Editor => setEditorComponent(() => Editor)).catch(
-      err => {
+    let mounted = true;
+    EditorPromise.then(Editor => {
+      if (mounted) setEditorComponent(() => Editor);
+    }).catch(err => {
+      if (mounted) {
         setEditorLoadError(
           `Failed to load editor: ${err?.message ?? String(err)}`,
         );
-      },
-    );
+      }
+    });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // Sync editor mode when sourceMode prop changes

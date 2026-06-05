@@ -23,7 +23,7 @@ import {
 } from '@backstage/frontend-plugin-api';
 import { discoveryApiRef, fetchApiRef } from '@backstage/core-plugin-api';
 import { EntityContentBlueprint } from '@backstage/plugin-catalog-react/alpha';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams } from 'react-router-dom';
 import {
   TechDocsEditorApiRef,
   TechDocsEditorClient,
@@ -56,17 +56,18 @@ const EditorPageContent = () => {
   const [searchParams] = useSearchParams();
   const initialPath = searchParams.get('file') ?? undefined;
 
-  // Extract entity ref from the URL path
-  // The route is /docs/:namespace/:kind/:name/edit
-  const pathParts = window.location.pathname.split('/');
-  const editIdx = pathParts.lastIndexOf('edit');
-  const [name, kind, namespace] = [
-    pathParts[editIdx - 1],
-    pathParts[editIdx - 2],
-    pathParts[editIdx - 3],
-  ];
+  // Extract entity ref from route params (path: /docs/:namespace/:kind/:name/edit)
+  const { namespace, kind, name } = useParams<{
+    namespace: string;
+    kind: string;
+    name: string;
+  }>();
 
-  const entityRef = parseEntityRef(`${kind}:${namespace ?? 'default'}/${name}`);
+  if (!namespace || !kind || !name) {
+    return null;
+  }
+
+  const entityRef = parseEntityRef(`${kind}:${namespace}/${name}`);
   return <TechDocsEditorPage entityRef={entityRef} initialPath={initialPath} />;
 };
 

@@ -93,6 +93,8 @@ export class GitLabVcsProvider implements VcsProvider {
       return { content, etag: file.blob_id };
     } catch (err: any) {
       if (
+        err.status === 404 ||
+        err.cause?.status === 404 ||
         err.cause?.description?.includes('404') ||
         err.message?.includes('404')
       ) {

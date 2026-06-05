@@ -69,6 +69,12 @@ export class GitHubVcsProvider implements VcsProvider {
     const auth =
       credentials.token ??
       credentials.headers?.Authorization?.replace(/^token /i, '');
+    if (!auth) {
+      throw new InputError(
+        `No GitHub credentials found for ${repoUrl}. ` +
+          `Ensure a GitHub integration with a token is configured in app-config.yaml.`,
+      );
+    }
     return new OctokitWithPR({
       auth,
       baseUrl: this.baseApiUrl,
@@ -121,8 +127,14 @@ export class GitHubVcsProvider implements VcsProvider {
       throw new InputError(`${opts.filePath} is a directory, not a file`);
     }
 
+    if (!data.sha) {
+      throw new InputError(
+        `GitHub API returned no SHA for ${opts.filePath} — cannot determine ETag for conflict detection.`,
+      );
+    }
+
     const content = Buffer.from(data.content, 'base64').toString('utf-8');
-    const etag = data.sha as string;
+    const etag = data.sha;
     return { content, etag };
   }
 
