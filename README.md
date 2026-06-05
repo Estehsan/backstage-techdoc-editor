@@ -7,6 +7,18 @@
 
 ---
 
+## Screenshots
+
+**Editor page** — file tree on the left, WYSIWYG editor on the right, Visual/Markdown toggle, and Submit Changes button:
+
+![TechDocs Editor page](https://raw.githubusercontent.com/Estehsan/community-plugins/add-techdocs-editor-workspace/workspaces/techdocs-editor/plugins/techdocs-editor/docs/editor-page.png)
+
+**Submit Documentation Edits dialog** — shows changed files, PR title, description, commit message, and draft option:
+
+![Submit Documentation Edits dialog](https://raw.githubusercontent.com/Estehsan/community-plugins/add-techdocs-editor-workspace/workspaces/techdocs-editor/plugins/techdocs-editor/docs/submit-dialog.png)
+
+---
+
 ## Packages
 
 | Package                                                                                                               | Version                                                                                                                                                                           | Description                               |
