@@ -14,13 +14,13 @@
 
 ## Packages
 
-| Package | Description | Version |
-| ------- | ----------- | ------- |
-| [`@estehsaan/backstage-plugin-techdocs-editor`](./plugins/techdocs-editor) | Frontend plugin — NFS & classic frontend system | [![npm](https://img.shields.io/npm/v/%40estehsaan%2Fbackstage-plugin-techdocs-editor)](https://www.npmjs.com/package/@estehsaan/backstage-plugin-techdocs-editor) |
+| Package                                                                                    | Description                                               | Version                                                                                                                                                                           |
+| ------------------------------------------------------------------------------------------ | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`@estehsaan/backstage-plugin-techdocs-editor`](./plugins/techdocs-editor)                 | Frontend plugin — NFS & classic frontend system           | [![npm](https://img.shields.io/npm/v/%40estehsaan%2Fbackstage-plugin-techdocs-editor)](https://www.npmjs.com/package/@estehsaan/backstage-plugin-techdocs-editor)                 |
 | [`@estehsaan/backstage-plugin-techdocs-editor-backend`](./plugins/techdocs-editor-backend) | Backend REST API + built-in GitHub & GitLab VCS providers | [![npm](https://img.shields.io/npm/v/%40estehsaan%2Fbackstage-plugin-techdocs-editor-backend)](https://www.npmjs.com/package/@estehsaan/backstage-plugin-techdocs-editor-backend) |
-| [`@estehsaan/backstage-plugin-techdocs-editor-react`](./plugins/techdocs-editor-react) | Shared React components, hooks, and API client | [![npm](https://img.shields.io/npm/v/%40estehsaan%2Fbackstage-plugin-techdocs-editor-react)](https://www.npmjs.com/package/@estehsaan/backstage-plugin-techdocs-editor-react) |
-| [`@estehsaan/backstage-plugin-techdocs-editor-node`](./plugins/techdocs-editor-node) | Node extension point for custom VCS providers | [![npm](https://img.shields.io/npm/v/%40estehsaan%2Fbackstage-plugin-techdocs-editor-node)](https://www.npmjs.com/package/@estehsaan/backstage-plugin-techdocs-editor-node) |
-| [`@estehsaan/backstage-plugin-techdocs-editor-common`](./plugins/techdocs-editor-common) | Shared types and permission definitions | [![npm](https://img.shields.io/npm/v/%40estehsaan%2Fbackstage-plugin-techdocs-editor-common)](https://www.npmjs.com/package/@estehsaan/backstage-plugin-techdocs-editor-common) |
+| [`@estehsaan/backstage-plugin-techdocs-editor-react`](./plugins/techdocs-editor-react)     | Shared React components, hooks, and API client            | [![npm](https://img.shields.io/npm/v/%40estehsaan%2Fbackstage-plugin-techdocs-editor-react)](https://www.npmjs.com/package/@estehsaan/backstage-plugin-techdocs-editor-react)     |
+| [`@estehsaan/backstage-plugin-techdocs-editor-node`](./plugins/techdocs-editor-node)       | Node extension point for custom VCS providers             | [![npm](https://img.shields.io/npm/v/%40estehsaan%2Fbackstage-plugin-techdocs-editor-node)](https://www.npmjs.com/package/@estehsaan/backstage-plugin-techdocs-editor-node)       |
+| [`@estehsaan/backstage-plugin-techdocs-editor-common`](./plugins/techdocs-editor-common)   | Shared types and permission definitions                   | [![npm](https://img.shields.io/npm/v/%40estehsaan%2Fbackstage-plugin-techdocs-editor-common)](https://www.npmjs.com/package/@estehsaan/backstage-plugin-techdocs-editor-common)   |
 
 ## Quick Install
 

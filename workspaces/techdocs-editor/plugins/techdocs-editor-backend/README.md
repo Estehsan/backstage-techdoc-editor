@@ -123,5 +123,4 @@ Both are exported from `@estehsaan/backstage-plugin-techdocs-editor-common`.
 
 Apache-2.0
 
-
 Apache-2.0

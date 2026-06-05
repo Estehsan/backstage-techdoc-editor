@@ -68,11 +68,11 @@ import { TechDocsMarkdownEditor } from '@estehsaan/backstage-plugin-techdocs-edi
 />;
 ```
 
-| Prop             | Type                        | Required | Description                                                      |
-| ---------------- | --------------------------- | -------- | ---------------------------------------------------------------- |
-| `initialContent` | `string`                    | Yes      | Initial Markdown content loaded into the editor                  |
-| `onChange`       | `(markdown: string) => void` | Yes      | Called on every edit with the current Markdown string            |
-| `sourceMode`     | `boolean`                   | No       | When `true`, shows raw Markdown source; `false` = WYSIWYG (default: `false`) |
+| Prop             | Type                         | Required | Description                                                                  |
+| ---------------- | ---------------------------- | -------- | ---------------------------------------------------------------------------- |
+| `initialContent` | `string`                     | Yes      | Initial Markdown content loaded into the editor                              |
+| `onChange`       | `(markdown: string) => void` | Yes      | Called on every edit with the current Markdown string                        |
+| `sourceMode`     | `boolean`                    | No       | When `true`, shows raw Markdown source; `false` = WYSIWYG (default: `false`) |
 
 ### `SubmitEditsDialog`
 
@@ -90,13 +90,13 @@ import type { EditedFile } from '@estehsaan/backstage-plugin-techdocs-editor-com
 />;
 ```
 
-| Prop            | Type                                                                                                                        | Required | Description                                                      |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------- |
-| `open`          | `boolean`                                                                                                                   | Yes      | Controls dialog visibility                                       |
-| `changedFiles`  | `EditedFile[]`                                                                                                              | Yes      | Files with pending edits — shown in the dialog as a change list  |
-| `onClose`       | `() => void`                                                                                                                | Yes      | Called when the dialog is dismissed without submitting           |
-| `onSubmit`      | `(opts: { prTitle: string; prDescription: string; commitMessage: string; draft: boolean }) => Promise<void>`                | Yes      | Called with the PR form data; should call the API and resolve/reject accordingly |
-| `defaultPrTitle` | `string`                                                                                                                   | No       | Pre-fills the PR title field (default: `'docs: update documentation'`) |
+| Prop             | Type                                                                                                         | Required | Description                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------------------------ | -------- | -------------------------------------------------------------------------------- |
+| `open`           | `boolean`                                                                                                    | Yes      | Controls dialog visibility                                                       |
+| `changedFiles`   | `EditedFile[]`                                                                                               | Yes      | Files with pending edits — shown in the dialog as a change list                  |
+| `onClose`        | `() => void`                                                                                                 | Yes      | Called when the dialog is dismissed without submitting                           |
+| `onSubmit`       | `(opts: { prTitle: string; prDescription: string; commitMessage: string; draft: boolean }) => Promise<void>` | Yes      | Called with the PR form data; should call the API and resolve/reject accordingly |
+| `defaultPrTitle` | `string`                                                                                                     | No       | Pre-fills the PR title field (default: `'docs: update documentation'`)           |
 
 ## Exported API Client
 
