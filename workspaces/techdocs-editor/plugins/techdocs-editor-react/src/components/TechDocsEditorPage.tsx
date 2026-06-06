@@ -254,9 +254,7 @@ export function TechDocsEditorPage({
     if (result.savedLocally) {
       // Show success message for local saves
       const count = result.savedCount ?? files.length;
-      setSuccessMessage(
-        `Saved ${count} file${count !== 1 ? 's' : ''} to disk`,
-      );
+      setSuccessMessage(`Saved ${count} file${count !== 1 ? 's' : ''} to disk`);
     } else if (result.pullRequestUrl) {
       // Open PR URL for VCS saves
       window.open(result.pullRequestUrl, '_blank', 'noopener,noreferrer');

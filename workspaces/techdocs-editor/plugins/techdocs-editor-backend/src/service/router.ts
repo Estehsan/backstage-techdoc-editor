@@ -148,7 +148,12 @@ export async function createRouter(
       const { namespace, kind, name } = req.params;
       const { entity } = await loadEntity(req, namespace, kind, name);
 
-      const source = await resolveSource(entity, scmIntegrations, reader, config);
+      const source = await resolveSource(
+        entity,
+        scmIntegrations,
+        reader,
+        config,
+      );
 
       let mkdocsContent = '{}';
       let repoUrl: string;
@@ -180,7 +185,8 @@ export async function createRouter(
           );
         }
 
-        branch = source.defaultBranch ?? (await provider.getDefaultBranch(repoUrl));
+        branch =
+          source.defaultBranch ?? (await provider.getDefaultBranch(repoUrl));
         resolvedDocsDir = source.docsDir ?? 'docs';
 
         try {
@@ -229,7 +235,12 @@ export async function createRouter(
       const { namespace, kind, name } = req.params;
       const { entity } = await loadEntity(req, namespace, kind, name);
 
-      const source = await resolveSource(entity, scmIntegrations, reader, config);
+      const source = await resolveSource(
+        entity,
+        scmIntegrations,
+        reader,
+        config,
+      );
 
       let repoUrl: string;
       let branch: string;
@@ -272,7 +283,8 @@ export async function createRouter(
           throw new InputError(`No VcsProvider for ${repoUrl}`);
         }
 
-        branch = source.defaultBranch ?? (await provider.getDefaultBranch(repoUrl));
+        branch =
+          source.defaultBranch ?? (await provider.getDefaultBranch(repoUrl));
         resolvedDocsDir = source.docsDir ?? 'docs';
         files = await provider.listFiles({
           repoUrl,
@@ -304,7 +316,12 @@ export async function createRouter(
 
       const { entity } = await loadEntity(req, namespace, kind, name);
 
-      const source = await resolveSource(entity, scmIntegrations, reader, config);
+      const source = await resolveSource(
+        entity,
+        scmIntegrations,
+        reader,
+        config,
+      );
 
       let repoUrl: string;
       let branch: string;
@@ -390,7 +407,12 @@ export async function createRouter(
       );
       const user = await userInfo.getUserInfo(credentials);
 
-      const source = await resolveSource(entity, scmIntegrations, reader, config);
+      const source = await resolveSource(
+        entity,
+        scmIntegrations,
+        reader,
+        config,
+      );
 
       // Determine repoUrl and resolvedDocsDir based on source type
       let repoUrl: string;
@@ -497,9 +519,9 @@ export async function createRouter(
       if (source.type === 'local') {
         const savedPath = path.join(source.basePath, resolvedDocsDir);
         logger.info(
-          `TechDocs editor: saved ${body.files.length} files locally for ${stringifyEntityRef(
-            entity,
-          )} at ${savedPath}`,
+          `TechDocs editor: saved ${
+            body.files.length
+          } files locally for ${stringifyEntityRef(entity)} at ${savedPath}`,
         );
 
         res.json({

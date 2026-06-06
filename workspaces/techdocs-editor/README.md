@@ -57,10 +57,10 @@ The plugin automatically registers an **Edit Docs** tab on every entity that has
 
 Both `url:` and `dir:` annotation types are supported:
 
-| Annotation type | Workflow |
-| --- | --- |
+| Annotation type                   | Workflow                                            |
+| --------------------------------- | --------------------------------------------------- |
 | `url:https://github.com/org/repo` | Edits are submitted as a GitHub/GitLab pull request |
-| `dir:.` (local filesystem) | Files are saved directly to disk — no PR required |
+| `dir:.` (local filesystem)        | Files are saved directly to disk — no PR required   |
 
 ### Classic Frontend System (Backstage < 1.30)
 

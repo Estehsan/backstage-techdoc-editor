@@ -31,6 +31,13 @@ import OpenInNewIcon from '@material-ui/icons/OpenInNew';
 import SaveIcon from '@material-ui/icons/Save';
 import { EditedFile } from '@estehsaan/backstage-plugin-techdocs-editor-common';
 
+function getButtonLabel(loading: boolean, isLocalSource: boolean): string {
+  if (loading) {
+    return isLocalSource ? 'Saving…' : 'Submitting…';
+  }
+  return isLocalSource ? 'Save to Disk' : 'Open Pull Request';
+}
+
 const useStyles = makeStyles(theme => ({
   field: {
     marginBottom: theme.spacing(2),
@@ -158,7 +165,9 @@ export function SubmitEditsDialog({
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>
-        {isLocalSource ? 'Save Documentation Edits' : 'Submit Documentation Edits'}
+        {isLocalSource
+          ? 'Save Documentation Edits'
+          : 'Submit Documentation Edits'}
       </DialogTitle>
       <DialogContent>
         <div className={classes.changedFiles}>
@@ -260,13 +269,7 @@ export function SubmitEditsDialog({
           }
           startIcon={isLocalSource ? <SaveIcon /> : undefined}
         >
-          {loading
-            ? isLocalSource
-              ? 'Saving…'
-              : 'Submitting…'
-            : isLocalSource
-              ? 'Save to Disk'
-              : 'Open Pull Request'}
+          {getButtonLabel(loading, isLocalSource)}
         </Button>
       </DialogActions>
     </Dialog>

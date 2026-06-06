@@ -180,7 +180,9 @@ export class LocalFsVcsProvider implements VcsProvider {
         continue;
       }
 
-      const relPath = relativePath ? `${relativePath}/${entry.name}` : entry.name;
+      const relPath = relativePath
+        ? `${relativePath}/${entry.name}`
+        : entry.name;
       const fullPath = path.join(dirPath, entry.name);
 
       if (entry.isDirectory()) {
@@ -188,7 +190,9 @@ export class LocalFsVcsProvider implements VcsProvider {
       } else if (entry.isFile()) {
         // Include markdown files and common doc assets
         const ext = path.extname(entry.name).toLowerCase();
-        if (['.md', '.mdx', '.png', '.jpg', '.jpeg', '.gif', '.svg'].includes(ext)) {
+        if (
+          ['.md', '.mdx', '.png', '.jpg', '.jpeg', '.gif', '.svg'].includes(ext)
+        ) {
           files.push(relPath);
         }
       }

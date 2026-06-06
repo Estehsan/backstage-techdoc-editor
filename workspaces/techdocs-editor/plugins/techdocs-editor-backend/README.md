@@ -79,11 +79,17 @@ All routes are served under `/api/techdocs-editor`.
 ### Response
 
 **For `url:` sources** (VCS pull/merge request):
+
 ```json
-{ "pullRequestUrl": "https://github.com/org/repo/pull/42", "pullRequestNumber": 42, "headBranch": "techdocs-editor/..." }
+{
+  "pullRequestUrl": "https://github.com/org/repo/pull/42",
+  "pullRequestNumber": 42,
+  "headBranch": "techdocs-editor/..."
+}
 ```
 
 **For `dir:` sources** (local filesystem save):
+
 ```json
 { "savedLocally": true, "savedCount": 3, "savedPath": "/abs/path/to/entity" }
 ```
