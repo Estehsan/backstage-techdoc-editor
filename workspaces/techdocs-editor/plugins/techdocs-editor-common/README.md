@@ -65,20 +65,38 @@ if (isPermission(request.permission, techdocsEditorWritePermission)) {
 
 ### API request / response types
 
-| Type                  | Description                                                            |
-| --------------------- | ---------------------------------------------------------------------- |
-| `SubmitEditsRequest`  | Body of `POST /api/techdocs-editor/submissions/:namespace/:kind/:name` |
-| `SubmitEditsResponse` | Response from the submission endpoint — `{ prUrl: string }`            |
+| Type                  | Description                                                                                |
+| --------------------- | ------------------------------------------------------------------------------------------ |
+| `SubmitEditsRequest`  | Body of `POST /api/techdocs-editor/submissions/:namespace/:kind/:name`                     |
+| `SubmitEditsResponse` | Response from the submission endpoint — PR fields for `url:` sources, `savedLocally` fields for `dir:` |
+| `ResolvedSource`      | Discriminated union — `{ type: 'vcs', repoUrl, docsDir, defaultBranch }` or `{ type: 'local', basePath, docsDir }` |
 
 #### `SubmitEditsRequest` shape
 
 ```ts
 type SubmitEditsRequest = {
-  files: EditedFile[]; // Files to commit — each must have path and content
-  prTitle: string; // Pull/merge request title
-  commitMessage: string; // Commit message
-  prBody?: string; // Optional PR/MR description
-  newBranch?: string; // Optional branch name (auto-generated if omitted)
+  files: EditedFile[];     // Files to commit — each must have path and content
+  commitMessage: string;   // Commit message
+  prTitle?: string;        // Pull/merge request title — required for url: sources, ignored for dir:
+  prDescription?: string;  // Optional PR/MR description (url: only)
+  draft?: boolean;         // Open as draft PR (url: only)
+  baseBranch?: string;     // Override base branch (url: only)
+};
+```
+
+#### `SubmitEditsResponse` shape
+
+```ts
+type SubmitEditsResponse = {
+  // VCS (url:) fields — present when a PR was opened
+  pullRequestUrl?: string;
+  pullRequestNumber?: number;
+  headBranch?: string;
+
+  // Local (dir:) fields — present when files were saved to disk
+  savedLocally?: boolean;
+  savedCount?: number;
+  savedPath?: string;
 };
 ```
 
