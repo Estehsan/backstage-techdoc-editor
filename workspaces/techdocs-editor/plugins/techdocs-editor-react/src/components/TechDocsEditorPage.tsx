@@ -25,7 +25,6 @@ import {
   Tooltip,
   Typography,
 } from '@material-ui/core';
-import { Alert } from '@material-ui/lab';
 import CodeIcon from '@material-ui/icons/Code';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import SaveIcon from '@material-ui/icons/Save';
@@ -383,15 +382,8 @@ export function TechDocsEditorPage({
           autoHideDuration={6000}
           onClose={() => setSuccessMessage(null)}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert
-            onClose={() => setSuccessMessage(null)}
-            severity="success"
-            variant="filled"
-          >
-            {successMessage}
-          </Alert>
-        </Snackbar>
+          message={successMessage ?? ''}
+        />
       </Content>
     </Page>
   );
