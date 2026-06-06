@@ -30,6 +30,7 @@ export type SubmitEditsDialogProps = {
     draft: boolean;
   }) => Promise<void>;
   defaultPrTitle?: string;
+  isLocalSource?: boolean;
 };
 
 // @public

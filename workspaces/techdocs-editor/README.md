@@ -55,6 +55,13 @@ export const app = createApp({
 
 The plugin automatically registers an **Edit Docs** tab on every entity that has a `backstage.io/techdocs-ref` annotation, and a standalone editor page at `/docs/:namespace/:kind/:name/edit`.
 
+Both `url:` and `dir:` annotation types are supported:
+
+| Annotation type                   | Workflow                                            |
+| --------------------------------- | --------------------------------------------------- |
+| `url:https://github.com/org/repo` | Edits are submitted as a GitHub/GitLab pull request |
+| `dir:.` (local filesystem)        | Files are saved directly to disk — no PR required   |
+
 ### Classic Frontend System (Backstage < 1.30)
 
 See [plugins/techdocs-editor/README.md](./plugins/techdocs-editor/README.md#classic-frontend-system-backstage--130) for addon-based wiring.
@@ -93,6 +100,32 @@ yarn lint
 # Build API reports (required before PRs)
 yarn build:api-reports:only
 ```
+
+## Supported Annotation Types
+
+### `url:` — Remote VCS (GitHub / GitLab)
+
+```yaml
+# catalog-info.yaml
+metadata:
+  annotations:
+    backstage.io/techdocs-ref: url:https://github.com/org/repo/tree/main/docs
+```
+
+The editor reads files from the remote repo and submits changes as a pull/merge request.
+
+### `dir:` — Local Filesystem
+
+```yaml
+# catalog-info.yaml
+metadata:
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+```
+
+The editor reads files directly from the local filesystem (resolved relative to the entity's `backstage.io/source-location`) and saves edits in-place. No PR is created — the Save to Disk button writes changes immediately. Useful for local development and monorepo setups where docs live alongside code.
+
+> **Note:** `dir:` support requires no additional configuration. The backend resolves the path from the entity's `backstage.io/source-location` annotation automatically.
 
 ## Configuration
 

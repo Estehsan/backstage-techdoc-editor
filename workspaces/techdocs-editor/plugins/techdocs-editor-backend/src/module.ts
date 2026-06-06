@@ -21,12 +21,14 @@ import {
 import { techdocsEditorVcsProviderExtensionPoint } from '@estehsaan/backstage-plugin-techdocs-editor-node';
 import { GitHubVcsProvider } from './providers/GitHubVcsProvider';
 import { GitLabVcsProvider } from './providers/GitLabVcsProvider';
+import { LocalFsVcsProvider } from './service/LocalFsVcsProvider';
 
 /**
- * Backend module that registers the built-in GitHub and GitLab VCS providers
- * for the techdocs-editor backend plugin.
+ * Backend module that registers the built-in GitHub, GitLab, and local
+ * filesystem VCS providers for the techdocs-editor backend plugin.
  *
- * Add this to your backend to enable PR creation for both GitHub and GitLab:
+ * Add this to your backend to enable PR creation for GitHub and GitLab,
+ * and direct file editing for local documentation sources:
  *
  * ```ts
  * backend.add(import('@estehsaan/backstage-plugin-techdocs-editor-backend'));
@@ -44,8 +46,12 @@ export const techdocsEditorModuleDefaultProviders = createBackendModule({
         vcs: techdocsEditorVcsProviderExtensionPoint,
       },
       async init({ config, vcs }) {
+        // Register VCS providers in priority order (first match wins)
+        // GitHub and GitLab have higher priority than local filesystem
         vcs.addProvider(new GitHubVcsProvider(config));
         vcs.addProvider(new GitLabVcsProvider(config));
+        // Local filesystem provider handles file:// URLs (lowest priority)
+        vcs.addProvider(new LocalFsVcsProvider());
       },
     });
   },

@@ -3,7 +3,7 @@
 [![npm](https://img.shields.io/npm/v/%40estehsaan%2Fbackstage-plugin-techdocs-editor-backend)](https://www.npmjs.com/package/@estehsaan/backstage-plugin-techdocs-editor-backend)
 [![CI](https://github.com/Estehsan/backstage-techdoc-editor/actions/workflows/ci.yaml/badge.svg)](https://github.com/Estehsan/backstage-techdoc-editor/actions/workflows/ci.yaml)
 
-Backend plugin for the TechDocs in-app editor. Provides the REST API used by the frontend to read documentation source files from GitHub/GitLab and submit edited files as pull/merge requests.
+Backend plugin for the TechDocs in-app editor. Provides the REST API used by the frontend to read documentation source files and submit edits — either as a GitHub/GitLab pull request (`url:` annotations) or saved directly to the local filesystem (`dir:` annotations).
 
 ## Installation
 
@@ -18,7 +18,7 @@ Add the plugin to `packages/backend/src/index.ts`:
 backend.add(import('@estehsaan/backstage-plugin-techdocs-editor-backend'));
 ```
 
-The default installation bundles built-in GitHub and GitLab providers. No extra modules are required for those two VCS platforms.
+The default installation bundles built-in GitHub, GitLab, and local filesystem providers. No extra modules are required for those sources.
 
 ### Adding a custom VCS provider
 
@@ -56,7 +56,7 @@ All routes are served under `/api/techdocs-editor`.
 | GET    | `/sources/:namespace/:kind/:name/mkdocs`           | `techdocs.editor.read`  | Returns the parsed `mkdocs.yml` for the entity's docs repo |
 | GET    | `/sources/:namespace/:kind/:name/tree`             | `techdocs.editor.read`  | Returns the list of docs files in the docs directory       |
 | GET    | `/sources/:namespace/:kind/:name/file?path=<path>` | `techdocs.editor.read`  | Returns file content and ETag for a specific docs file     |
-| POST   | `/submissions/:namespace/:kind/:name`              | `techdocs.editor.write` | Submits edits and opens a pull/merge request on the VCS    |
+| POST   | `/submissions/:namespace/:kind/:name`              | `techdocs.editor.write` | Submits edits — opens a PR on the VCS or saves to disk     |
 
 ### POST `/submissions/:namespace/:kind/:name` body
 
@@ -67,13 +67,31 @@ All routes are served under `/api/techdocs-editor`.
     content: string; // new file content
     etag?: string;   // ETag from the GET /file response — used for conflict detection
   }>;
-  prTitle: string;        // pull/merge request title
   commitMessage: string;  // commit message
-  prDescription?: string; // optional PR/MR description
-  newBranch?: string;     // optional branch name (auto-generated if omitted)
-  baseBranch?: string;    // optional base branch (falls back to repo default)
-  draft?: boolean;        // open as draft PR (default: false)
+  prTitle?: string;       // PR/MR title — required for url: sources, ignored for dir:
+  prDescription?: string; // optional PR/MR description (url: only)
+  newBranch?: string;     // optional branch name (auto-generated if omitted, url: only)
+  baseBranch?: string;    // optional base branch (falls back to repo default, url: only)
+  draft?: boolean;        // open as draft PR (default: false, url: only)
 }
+```
+
+### Response
+
+**For `url:` sources** (VCS pull/merge request):
+
+```json
+{
+  "pullRequestUrl": "https://github.com/org/repo/pull/42",
+  "pullRequestNumber": 42,
+  "headBranch": "techdocs-editor/..."
+}
+```
+
+**For `dir:` sources** (local filesystem save):
+
+```json
+{ "savedLocally": true, "savedCount": 3, "savedPath": "/abs/path/to/entity" }
 ```
 
 ## Configuration

@@ -20,8 +20,6 @@
     ]
   },
   "devDependencies": {
-    "react": "^18.0.2",
-    "react-dom": "^18.0.2",
     "typescript": "~5.4.0"
   }
 }

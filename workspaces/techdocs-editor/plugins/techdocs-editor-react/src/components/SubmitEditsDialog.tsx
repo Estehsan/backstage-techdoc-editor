@@ -28,7 +28,15 @@ import {
   makeStyles,
 } from '@material-ui/core';
 import OpenInNewIcon from '@material-ui/icons/OpenInNew';
+import SaveIcon from '@material-ui/icons/Save';
 import { EditedFile } from '@estehsaan/backstage-plugin-techdocs-editor-common';
+
+function getButtonLabel(loading: boolean, isLocalSource: boolean): string {
+  if (loading) {
+    return isLocalSource ? 'Saving…' : 'Submitting…';
+  }
+  return isLocalSource ? 'Save to Disk' : 'Open Pull Request';
+}
 
 const useStyles = makeStyles(theme => ({
   field: {
@@ -66,6 +74,11 @@ export type SubmitEditsDialogProps = {
     draft: boolean;
   }) => Promise<void>;
   defaultPrTitle?: string;
+  /**
+   * If true, hide PR fields and show simplified local save UI.
+   * Local sources write files directly to disk without creating PRs.
+   */
+  isLocalSource?: boolean;
 };
 
 /**
@@ -78,6 +91,7 @@ export function SubmitEditsDialog({
   onClose,
   onSubmit,
   defaultPrTitle = 'docs: update documentation',
+  isLocalSource = false,
 }: SubmitEditsDialogProps) {
   const classes = useStyles();
   const [prTitle, setPrTitle] = useState(defaultPrTitle);
@@ -91,7 +105,9 @@ export function SubmitEditsDialog({
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
-    if (!prTitle.trim() || !commitMessage.trim()) return;
+    // For local sources, neither prTitle nor commitMessage are required
+    if (!isLocalSource && !prTitle.trim()) return;
+    if (!isLocalSource && !commitMessage.trim()) return;
     setLoading(true);
     setError(null);
     try {
@@ -148,7 +164,11 @@ export function SubmitEditsDialog({
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Submit Documentation Edits</DialogTitle>
+      <DialogTitle>
+        {isLocalSource
+          ? 'Save Documentation Edits'
+          : 'Submit Documentation Edits'}
+      </DialogTitle>
       <DialogContent>
         <div className={classes.changedFiles}>
           <Typography variant="caption" color="textSecondary">
@@ -165,51 +185,68 @@ export function SubmitEditsDialog({
           ))}
         </div>
 
-        <TextField
-          className={classes.field}
-          label="Pull Request Title"
-          fullWidth
-          variant="outlined"
-          size="small"
-          value={prTitle}
-          onChange={e => setPrTitle(e.target.value)}
-          required
-        />
+        {isLocalSource && (
+          <Typography
+            variant="body2"
+            color="textSecondary"
+            style={{ marginBottom: 16 }}
+          >
+            These changes will be saved directly to the local filesystem. No
+            pull request will be created.
+          </Typography>
+        )}
+
+        {!isLocalSource && (
+          <>
+            <TextField
+              className={classes.field}
+              label="Pull Request Title"
+              fullWidth
+              variant="outlined"
+              size="small"
+              value={prTitle}
+              onChange={e => setPrTitle(e.target.value)}
+              required
+            />
+
+            <TextField
+              className={classes.field}
+              label="Description (optional)"
+              fullWidth
+              variant="outlined"
+              size="small"
+              multiline
+              minRows={3}
+              value={prDescription}
+              onChange={e => setPrDescription(e.target.value)}
+              placeholder="What did you change and why?"
+            />
+          </>
+        )}
 
         <TextField
           className={classes.field}
-          label="Description (optional)"
-          fullWidth
-          variant="outlined"
-          size="small"
-          multiline
-          minRows={3}
-          value={prDescription}
-          onChange={e => setPrDescription(e.target.value)}
-          placeholder="What did you change and why?"
-        />
-
-        <TextField
-          className={classes.field}
-          label="Commit Message"
+          label={isLocalSource ? 'Note (optional)' : 'Commit Message'}
           fullWidth
           variant="outlined"
           size="small"
           value={commitMessage}
           onChange={e => setCommitMessage(e.target.value)}
-          required
+          required={!isLocalSource}
         />
 
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={draft}
-              onChange={e => setDraft(e.target.checked)}
-              color="primary"
-            />
-          }
-          label="Open as draft pull request"
-        />
+        {!isLocalSource && (
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={draft}
+                onChange={e => setDraft(e.target.checked)}
+                color="primary"
+              />
+            }
+            label="Open as draft pull request"
+          />
+        )}
 
         {error && (
           <Typography color="error" variant="body2" style={{ marginTop: 8 }}>
@@ -225,9 +262,14 @@ export function SubmitEditsDialog({
           onClick={handleSubmit}
           color="primary"
           variant="contained"
-          disabled={loading || !prTitle.trim() || !commitMessage.trim()}
+          disabled={
+            loading ||
+            (!isLocalSource && !prTitle.trim()) ||
+            (!isLocalSource && !commitMessage.trim())
+          }
+          startIcon={isLocalSource ? <SaveIcon /> : undefined}
         >
-          {loading ? 'Submitting…' : 'Open Pull Request'}
+          {getButtonLabel(loading, isLocalSource)}
         </Button>
       </DialogActions>
     </Dialog>

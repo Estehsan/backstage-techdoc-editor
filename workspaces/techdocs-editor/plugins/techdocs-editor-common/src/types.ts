@@ -84,10 +84,13 @@ export type EditedFile = {
 export type SubmitEditsRequest = {
   files: EditedFile[];
   commitMessage: string;
-  prTitle: string;
+  /** PR title. Required for VCS submissions, ignored for local saves. */
+  prTitle?: string;
+  /** PR description. Used only for VCS submissions. */
   prDescription?: string;
+  /** Open as draft PR. Used only for VCS submissions. */
   draft?: boolean;
-  /** Override the base branch (default: repo default branch) */
+  /** Override the base branch. Used only for VCS submissions. */
   baseBranch?: string;
 };
 
@@ -96,10 +99,42 @@ export type SubmitEditsRequest = {
  * @public
  */
 export type SubmitEditsResponse = {
-  pullRequestUrl: string;
-  pullRequestNumber: number;
-  headBranch: string;
+  /** PR URL. Present only for VCS-based submissions, undefined for local saves. */
+  pullRequestUrl?: string;
+  /** PR number. Present only for VCS-based submissions, undefined for local saves. */
+  pullRequestNumber?: number;
+  /** Head branch name. Present only for VCS-based submissions, undefined for local saves. */
+  headBranch?: string;
+  /** Whether the files were saved directly to the local filesystem. */
+  savedLocally?: boolean;
+  /** Number of files saved locally. Present only when savedLocally is true. */
+  savedCount?: number;
+  /** Base path where files were saved. Present only when savedLocally is true. */
+  savedPath?: string;
 };
+
+/**
+ * Resolved source location for a TechDocs entity.
+ * Either a VCS URL or a local filesystem path.
+ * @public
+ */
+export type ResolvedSource =
+  | {
+      type: 'vcs';
+      /** Full repository URL, e.g. https://github.com/org/repo */
+      repoUrl: string;
+      /** Docs directory relative to repo root, e.g. "docs" */
+      docsDir: string | undefined;
+      /** Default branch name, e.g. "main" */
+      defaultBranch: string | undefined;
+    }
+  | {
+      type: 'local';
+      /** Absolute path to the entity root directory on the local filesystem */
+      basePath: string;
+      /** Docs directory relative to basePath, e.g. "docs" */
+      docsDir: string;
+    };
 
 /**
  * A file conflict detected when the source changed between open and submit.

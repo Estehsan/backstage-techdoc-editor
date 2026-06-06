@@ -15,11 +15,14 @@
  */
 
 import { Entity } from '@backstage/catalog-model';
+import { Config } from '@backstage/config';
 import { InputError } from '@backstage/errors';
 import { ScmIntegrationRegistry } from '@backstage/integration';
 import { UrlReaderService } from '@backstage/backend-plugin-api';
 import { parseReferenceAnnotation } from '@backstage/plugin-techdocs-node';
 import { TECHDOCS_ANNOTATION } from '@backstage/plugin-techdocs-common';
+import { ResolvedSource } from '@estehsaan/backstage-plugin-techdocs-editor-common';
+import path from 'node:path';
 
 const GITHUB_SLUG_ANNOTATION = 'github.com/project-slug';
 const GITLAB_SLUG_ANNOTATION = 'gitlab.com/project-slug';
@@ -47,6 +50,27 @@ function assertSafeDocsDir(docsDir: string): void {
   if (!/^[a-zA-Z0-9_\-./]+$/.test(docsDir)) {
     throw new InputError(
       `Invalid docs_dir '${docsDir}': only alphanumeric characters, hyphens, underscores, dots, and slashes are allowed.`,
+    );
+  }
+}
+
+/**
+ * Validates that a local path does not escape the allowed working directory.
+ * Throws InputError on any path traversal attempt.
+ *
+ * @internal
+ */
+function assertSafeLocalPath(basePath: string, workingDir: string): void {
+  const normalizedBase = path.normalize(path.resolve(workingDir, basePath));
+  const normalizedWork = path.normalize(workingDir);
+
+  if (
+    !normalizedBase.startsWith(normalizedWork + path.sep) &&
+    normalizedBase !== normalizedWork
+  ) {
+    throw new InputError(
+      `Path '${basePath}' resolves outside the Backstage working directory. ` +
+        `This may be a path traversal attempt.`,
     );
   }
 }
@@ -83,21 +107,69 @@ function resolveFromSlug(
   return undefined;
 }
 
+const SOURCE_LOCATION_ANNOTATION = 'backstage.io/source-location';
+const MANAGED_BY_LOCATION_ANNOTATION = 'backstage.io/managed-by-location';
+
 /**
- * Resolve the source repository URL, docs directory, and default branch
- * from an entity's techdocs annotation.
+ * Resolve the base path for a local `dir:` annotation.
+ * Priority:
+ * 1. backstage.io/source-location annotation (strip file:// prefix)
+ * 2. backstage.io/managed-by-location annotation (if file:// type)
+ * 3. Backstage backend working directory from config
  *
  * @internal
  */
-export async function resolveSourceUrl(
+function resolveLocalBasePath(entity: Entity, config: Config): string {
+  const annotations = entity.metadata.annotations ?? {};
+
+  // Try backstage.io/source-location first
+  const sourceLocation = annotations[SOURCE_LOCATION_ANNOTATION];
+  if (sourceLocation) {
+    // Format: url:file:///path/to/entity or file:///path/to/entity
+    let locationPath = sourceLocation;
+    if (locationPath.startsWith('url:')) {
+      locationPath = locationPath.slice(4);
+    }
+    if (locationPath.startsWith('file://')) {
+      return decodeURIComponent(locationPath.slice(7));
+    }
+  }
+
+  // Try backstage.io/managed-by-location
+  const managedBy = annotations[MANAGED_BY_LOCATION_ANNOTATION];
+  if (managedBy) {
+    // Format: file:/path/to/entity/catalog-info.yaml or url:file:///path
+    let locationPath = managedBy;
+    if (locationPath.startsWith('url:')) {
+      locationPath = locationPath.slice(4);
+    }
+    if (locationPath.startsWith('file://')) {
+      const fullPath = decodeURIComponent(locationPath.slice(7));
+      // Return directory containing the catalog file
+      return path.dirname(fullPath);
+    }
+    if (locationPath.startsWith('file:')) {
+      const fullPath = decodeURIComponent(locationPath.slice(5));
+      return path.dirname(fullPath);
+    }
+  }
+
+  // Fall back to Backstage working directory
+  return config.getOptionalString('backend.workingDirectory') ?? process.cwd();
+}
+
+/**
+ * Resolve the source location from an entity's techdocs annotation.
+ * Returns a discriminated union for VCS vs local filesystem sources.
+ *
+ * @internal
+ */
+export async function resolveSource(
   entity: Entity,
   scmIntegrations: ScmIntegrationRegistry,
   _reader: UrlReaderService,
-): Promise<{
-  repoUrl: string;
-  docsDir: string | undefined;
-  defaultBranch: string | undefined;
-}> {
+  config: Config,
+): Promise<ResolvedSource> {
   let annotation: ReturnType<typeof parseReferenceAnnotation> | undefined;
   try {
     annotation = parseReferenceAnnotation(TECHDOCS_ANNOTATION, entity);
@@ -105,10 +177,36 @@ export async function resolveSourceUrl(
     // Missing annotation — try slug fallback below
   }
 
+  // Handle dir: annotations for local filesystem
+  if (annotation && annotation.type === 'dir') {
+    const dirRelativePath = annotation.target; // e.g., ".", "./docs", "custom-docs"
+    const basePath = resolveLocalBasePath(entity, config);
+    const workingDir =
+      config.getOptionalString('backend.workingDirectory') ?? process.cwd();
+
+    // Resolve absolute path
+    const absolutePath = path.resolve(basePath, dirRelativePath);
+
+    // Security: Prevent path traversal outside working directory
+    assertSafeLocalPath(absolutePath, workingDir);
+
+    return {
+      type: 'local',
+      basePath: absolutePath,
+      docsDir: 'docs', // Will be overridden by mkdocs.yml if found
+    };
+  }
+
+  // Handle url: annotations or missing annotations (try slug fallback)
   if (!annotation || annotation.type !== 'url') {
     const slugUrl = resolveFromSlug(entity, scmIntegrations);
     if (slugUrl) {
-      return { repoUrl: slugUrl, docsDir: undefined, defaultBranch: undefined };
+      return {
+        type: 'vcs',
+        repoUrl: slugUrl,
+        docsDir: undefined,
+        defaultBranch: undefined,
+      };
     }
     if (!annotation) {
       throw new InputError(
@@ -117,9 +215,9 @@ export async function resolveSourceUrl(
       );
     }
     throw new InputError(
-      `TechDocs editor only supports 'url:' type annotations. Got '${annotation.type}:'. ` +
+      `TechDocs editor only supports 'url:' or 'dir:' type annotations. Got '${annotation.type}:'. ` +
         `Add a 'github.com/project-slug' or 'gitlab.com/project-slug' annotation, ` +
-        `or change the techdocs-ref to 'url:https://github.com/org/repo'.`,
+        `or change the techdocs-ref to 'url:https://github.com/org/repo' or 'dir:.'.`,
     );
   }
 
@@ -172,5 +270,5 @@ export async function resolveSourceUrl(
     assertSafeDocsDir(docsDir);
   }
 
-  return { repoUrl, docsDir, defaultBranch };
+  return { type: 'vcs', repoUrl, docsDir, defaultBranch };
 }

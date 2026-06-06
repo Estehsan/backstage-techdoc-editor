@@ -52,10 +52,24 @@ export type MkDocsConfig = {
 export type MkDocsNavEntry = string | Record<string, string | MkDocsNavEntry[]>;
 
 // @public
+export type ResolvedSource =
+  | {
+      type: 'vcs';
+      repoUrl: string;
+      docsDir: string | undefined;
+      defaultBranch: string | undefined;
+    }
+  | {
+      type: 'local';
+      basePath: string;
+      docsDir: string;
+    };
+
+// @public
 export type SubmitEditsRequest = {
   files: EditedFile[];
   commitMessage: string;
-  prTitle: string;
+  prTitle?: string;
   prDescription?: string;
   draft?: boolean;
   baseBranch?: string;
@@ -63,9 +77,12 @@ export type SubmitEditsRequest = {
 
 // @public
 export type SubmitEditsResponse = {
-  pullRequestUrl: string;
-  pullRequestNumber: number;
-  headBranch: string;
+  pullRequestUrl?: string;
+  pullRequestNumber?: number;
+  headBranch?: string;
+  savedLocally?: boolean;
+  savedCount?: number;
+  savedPath?: string;
 };
 
 // @public
