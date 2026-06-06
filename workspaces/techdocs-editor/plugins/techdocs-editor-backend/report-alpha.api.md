@@ -6,7 +6,9 @@
 import { BackendFeature } from '@backstage/backend-plugin-api';
 
 // @public
-export const techdocsEditorModuleDefaultProviders: BackendFeature;
+const techdocsEditorModuleDefaultProviders: BackendFeature;
+export default techdocsEditorModuleDefaultProviders;
+export { techdocsEditorModuleDefaultProviders };
 
 // (No @packageDocumentation comment for this package)
 ```

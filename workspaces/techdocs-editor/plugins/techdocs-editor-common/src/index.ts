@@ -34,4 +34,5 @@ export type {
   SubmitEditsRequest,
   SubmitEditsResponse,
   FileConflict,
+  ResolvedSource,
 } from './types';

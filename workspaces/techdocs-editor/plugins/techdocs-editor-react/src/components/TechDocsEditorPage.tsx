@@ -21,9 +21,11 @@ import {
   CircularProgress,
   Divider,
   makeStyles,
+  Snackbar,
   Tooltip,
   Typography,
 } from '@material-ui/core';
+import { Alert } from '@material-ui/lab';
 import CodeIcon from '@material-ui/icons/Code';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import SaveIcon from '@material-ui/icons/Save';
@@ -140,6 +142,10 @@ export function TechDocsEditorPage({
 
   const [sourceMode, setSourceMode] = useState(false);
   const [submitOpen, setSubmitOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Detect local source by checking if branch === 'local'
+  const isLocalSource = branch === 'local';
 
   const requestEntityRef = useMemo(
     () => ({
@@ -235,14 +241,26 @@ export function TechDocsEditorPage({
     const files: EditedFile[] = Array.from(editedFiles.values());
     const result = await api.submitEdits(entityRef, {
       files,
-      prTitle: opts.prTitle,
+      // Only include prTitle for VCS sources
+      prTitle: isLocalSource ? undefined : opts.prTitle,
       prDescription: opts.prDescription,
       commitMessage: opts.commitMessage,
       draft: opts.draft,
     });
     setEditedFiles(new Map());
     setSubmitOpen(false);
-    window.open(result.pullRequestUrl, '_blank', 'noopener,noreferrer');
+
+    // Handle different response types
+    if (result.savedLocally) {
+      // Show success message for local saves
+      const count = result.savedCount ?? files.length;
+      setSuccessMessage(
+        `Saved ${count} file${count !== 1 ? 's' : ''} to disk`,
+      );
+    } else if (result.pullRequestUrl) {
+      // Open PR URL for VCS saves
+      window.open(result.pullRequestUrl, '_blank', 'noopener,noreferrer');
+    }
   };
 
   const dirtyPaths = new Set(editedFiles.keys());
@@ -358,7 +376,24 @@ export function TechDocsEditorPage({
           defaultPrTitle={`docs: update ${
             mkdocsConfig?.site_name ?? entityRef.name
           } documentation`}
+          isLocalSource={isLocalSource}
         />
+
+        {/* Success notification for local saves */}
+        <Snackbar
+          open={!!successMessage}
+          autoHideDuration={6000}
+          onClose={() => setSuccessMessage(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert
+            onClose={() => setSuccessMessage(null)}
+            severity="success"
+            variant="filled"
+          >
+            {successMessage}
+          </Alert>
+        </Snackbar>
       </Content>
     </Page>
   );

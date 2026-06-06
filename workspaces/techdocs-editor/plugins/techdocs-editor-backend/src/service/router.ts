@@ -27,6 +27,8 @@ import {
 } from '@backstage/backend-plugin-api';
 import { InputError, NotFoundError, NotAllowedError } from '@backstage/errors';
 import { posix as posixPath } from 'node:path';
+import path from 'node:path';
+import { promises as fs } from 'node:fs';
 import { ScmIntegrations } from '@backstage/integration';
 import { parseEntityRef, stringifyEntityRef } from '@backstage/catalog-model';
 import {
@@ -39,7 +41,7 @@ import express, { Request, Response } from 'express';
 import Router from 'express-promise-router';
 import yaml from 'js-yaml';
 import { VcsProviderRegistry } from './VcsProviderRegistry';
-import { resolveSourceUrl } from './sourceResolver';
+import { resolveSource } from './sourceResolver';
 
 /**
  * Validates that a file path supplied by the client is relative, contains only
@@ -146,48 +148,75 @@ export async function createRouter(
       const { namespace, kind, name } = req.params;
       const { entity } = await loadEntity(req, namespace, kind, name);
 
-      const { repoUrl, docsDir, defaultBranch } = await resolveSourceUrl(
-        entity,
-        scmIntegrations,
-        reader,
-      );
+      const source = await resolveSource(entity, scmIntegrations, reader, config);
 
-      const provider = providerRegistry.getForUrl(repoUrl);
-      if (!provider) {
-        throw new InputError(
-          `No VcsProvider registered that can handle repo: ${repoUrl}`,
-        );
-      }
-
-      const branch =
-        defaultBranch ?? (await provider.getDefaultBranch(repoUrl));
       let mkdocsContent = '{}';
-      try {
-        const result = await provider.readFile({
-          repoUrl,
-          ref: branch,
-          filePath: 'mkdocs.yml',
-        });
-        mkdocsContent = result.content;
-      } catch (err: unknown) {
-        // Only ignore a missing mkdocs.yml — rethrow network, auth, or other errors
-        if (
-          !err ||
-          typeof err !== 'object' ||
-          (err as { name?: string }).name !== 'NotFoundError'
-        ) {
-          throw err;
+      let repoUrl: string;
+      let branch: string;
+      let resolvedDocsDir: string;
+
+      if (source.type === 'local') {
+        // Local filesystem source
+        repoUrl = `file://${source.basePath}`;
+        branch = 'local';
+        resolvedDocsDir = source.docsDir;
+
+        // Read mkdocs.yml directly from local filesystem
+        try {
+          mkdocsContent = await fs.readFile(
+            path.join(source.basePath, 'mkdocs.yml'),
+            'utf-8',
+          );
+        } catch {
+          // mkdocs.yml not found — use defaults
+        }
+      } else {
+        // VCS source
+        repoUrl = source.repoUrl;
+        const provider = providerRegistry.getForUrl(repoUrl);
+        if (!provider) {
+          throw new InputError(
+            `No VcsProvider registered that can handle repo: ${repoUrl}`,
+          );
+        }
+
+        branch = source.defaultBranch ?? (await provider.getDefaultBranch(repoUrl));
+        resolvedDocsDir = source.docsDir ?? 'docs';
+
+        try {
+          const result = await provider.readFile({
+            repoUrl,
+            ref: branch,
+            filePath: 'mkdocs.yml',
+          });
+          mkdocsContent = result.content;
+        } catch (err: unknown) {
+          // Only ignore a missing mkdocs.yml — rethrow network, auth, or other errors
+          if (
+            !err ||
+            typeof err !== 'object' ||
+            (err as { name?: string }).name !== 'NotFoundError'
+          ) {
+            throw err;
+          }
         }
       }
 
       const parsed =
         (yaml.load(mkdocsContent) as Record<string, unknown>) ?? {};
+
+      // Update docsDir from mkdocs.yml if present
+      if (parsed.docs_dir && typeof parsed.docs_dir === 'string') {
+        resolvedDocsDir = parsed.docs_dir;
+      }
+
       res.json({
         site_name: parsed.site_name ?? name,
-        docs_dir: parsed.docs_dir ?? docsDir ?? 'docs',
+        docs_dir: resolvedDocsDir,
         repo_url: parsed.repo_url ?? repoUrl,
         edit_uri: parsed.edit_uri ?? `edit/${branch}/`,
         nav: parsed.nav ?? null,
+        isLocalSource: source.type === 'local',
       });
     },
   );
@@ -200,27 +229,64 @@ export async function createRouter(
       const { namespace, kind, name } = req.params;
       const { entity } = await loadEntity(req, namespace, kind, name);
 
-      const { repoUrl, docsDir, defaultBranch } = await resolveSourceUrl(
-        entity,
-        scmIntegrations,
-        reader,
-      );
+      const source = await resolveSource(entity, scmIntegrations, reader, config);
 
-      const provider = providerRegistry.getForUrl(repoUrl);
-      if (!provider) {
-        throw new InputError(`No VcsProvider for ${repoUrl}`);
+      let repoUrl: string;
+      let branch: string;
+      let resolvedDocsDir: string;
+      let files: string[];
+
+      if (source.type === 'local') {
+        repoUrl = `file://${source.basePath}`;
+        branch = 'local';
+        resolvedDocsDir = source.docsDir;
+
+        // Read mkdocs.yml to get actual docs_dir
+        try {
+          const mkdocsContent = await fs.readFile(
+            path.join(source.basePath, 'mkdocs.yml'),
+            'utf-8',
+          );
+          const parsed = yaml.load(mkdocsContent) as Record<string, unknown>;
+          if (parsed?.docs_dir && typeof parsed.docs_dir === 'string') {
+            resolvedDocsDir = parsed.docs_dir;
+          }
+        } catch {
+          // mkdocs.yml not found — use default
+        }
+
+        const provider = providerRegistry.getForUrl(repoUrl);
+        if (!provider) {
+          throw new InputError(`No VcsProvider for ${repoUrl}`);
+        }
+
+        files = await provider.listFiles({
+          repoUrl,
+          ref: branch,
+          dirPath: resolvedDocsDir,
+        });
+      } else {
+        repoUrl = source.repoUrl;
+        const provider = providerRegistry.getForUrl(repoUrl);
+        if (!provider) {
+          throw new InputError(`No VcsProvider for ${repoUrl}`);
+        }
+
+        branch = source.defaultBranch ?? (await provider.getDefaultBranch(repoUrl));
+        resolvedDocsDir = source.docsDir ?? 'docs';
+        files = await provider.listFiles({
+          repoUrl,
+          ref: branch,
+          dirPath: resolvedDocsDir,
+        });
       }
 
-      const branch =
-        defaultBranch ?? (await provider.getDefaultBranch(repoUrl));
-      const resolvedDocsDir = docsDir ?? 'docs';
-      const files = await provider.listFiles({
-        repoUrl,
-        ref: branch,
-        dirPath: resolvedDocsDir,
+      res.json({
+        files,
+        docsDir: resolvedDocsDir,
+        branch,
+        isLocalSource: source.type === 'local',
       });
-
-      res.json({ files, docsDir: resolvedDocsDir, branch });
     },
   );
 
@@ -238,23 +304,50 @@ export async function createRouter(
 
       const { entity } = await loadEntity(req, namespace, kind, name);
 
-      const { repoUrl, docsDir, defaultBranch } = await resolveSourceUrl(
-        entity,
-        scmIntegrations,
-        reader,
-      );
+      const source = await resolveSource(entity, scmIntegrations, reader, config);
+
+      let repoUrl: string;
+      let branch: string;
+      let resolvedDocsDir: string;
+
+      if (source.type === 'local') {
+        repoUrl = `file://${source.basePath}`;
+        branch = 'local';
+        resolvedDocsDir = source.docsDir;
+
+        // Read mkdocs.yml to get actual docs_dir
+        try {
+          const mkdocsContent = await fs.readFile(
+            path.join(source.basePath, 'mkdocs.yml'),
+            'utf-8',
+          );
+          const parsed = yaml.load(mkdocsContent) as Record<string, unknown>;
+          if (parsed?.docs_dir && typeof parsed.docs_dir === 'string') {
+            resolvedDocsDir = parsed.docs_dir;
+          }
+        } catch {
+          // mkdocs.yml not found — use default
+        }
+      } else {
+        repoUrl = source.repoUrl;
+        resolvedDocsDir = source.docsDir ?? 'docs';
+
+        const provider = providerRegistry.getForUrl(repoUrl);
+        if (!provider) {
+          throw new InputError(`No VcsProvider for ${repoUrl}`);
+        }
+
+        branch =
+          (req.query.branch as string | undefined) ??
+          source.defaultBranch ??
+          (await provider.getDefaultBranch(repoUrl));
+      }
 
       const provider = providerRegistry.getForUrl(repoUrl);
       if (!provider) {
         throw new InputError(`No VcsProvider for ${repoUrl}`);
       }
 
-      const branch =
-        (req.query.branch as string | undefined) ??
-        defaultBranch ??
-        (await provider.getDefaultBranch(repoUrl));
-
-      const resolvedDocsDir = docsDir ?? 'docs';
       const fullPath = `${resolvedDocsDir}/${filePath}`;
 
       const { content, etag } = await provider.readFile({
@@ -278,9 +371,6 @@ export async function createRouter(
       if (!body.files?.length) {
         throw new InputError('No files provided');
       }
-      if (!body.prTitle) {
-        throw new InputError('prTitle is required');
-      }
       if (!body.commitMessage) {
         throw new InputError('commitMessage is required');
       }
@@ -300,21 +390,46 @@ export async function createRouter(
       );
       const user = await userInfo.getUserInfo(credentials);
 
-      const { repoUrl, docsDir, defaultBranch } = await resolveSourceUrl(
-        entity,
-        scmIntegrations,
-        reader,
-      );
+      const source = await resolveSource(entity, scmIntegrations, reader, config);
+
+      // Determine repoUrl and resolvedDocsDir based on source type
+      let repoUrl: string;
+      let resolvedDocsDir: string;
+
+      if (source.type === 'local') {
+        repoUrl = `file://${source.basePath}`;
+        resolvedDocsDir = source.docsDir;
+
+        // Read mkdocs.yml to get actual docs_dir
+        try {
+          const mkdocsContent = await fs.readFile(
+            path.join(source.basePath, 'mkdocs.yml'),
+            'utf-8',
+          );
+          const parsed = yaml.load(mkdocsContent) as Record<string, unknown>;
+          if (parsed?.docs_dir && typeof parsed.docs_dir === 'string') {
+            resolvedDocsDir = parsed.docs_dir;
+          }
+        } catch {
+          // mkdocs.yml not found — use default
+        }
+      } else {
+        // VCS source — require prTitle
+        if (!body.prTitle) {
+          throw new InputError('prTitle is required for VCS submissions');
+        }
+        repoUrl = source.repoUrl;
+        resolvedDocsDir = source.docsDir ?? 'docs';
+      }
 
       const provider = providerRegistry.getForUrl(repoUrl);
       if (!provider) {
         throw new InputError(`No VcsProvider for ${repoUrl}`);
       }
 
-      const resolvedDocsDir = docsDir ?? 'docs';
       const baseBranch =
         body.baseBranch ??
-        defaultBranch ??
+        (source.type === 'vcs' ? source.defaultBranch : undefined) ??
         (await provider.getDefaultBranch(repoUrl));
 
       // Conflict detection — re-read each file and compare etags
@@ -369,7 +484,7 @@ export async function createRouter(
         repoUrl,
         headBranch,
         baseBranch,
-        title: body.prTitle,
+        title: body.prTitle ?? 'TechDocs update',
         description: body.prDescription,
         files,
         commitMessage: body.commitMessage,
@@ -377,6 +492,23 @@ export async function createRouter(
         authorEmail,
         draft: body.draft ?? false,
       });
+
+      // Handle local save vs VCS PR differently
+      if (source.type === 'local') {
+        const savedPath = path.join(source.basePath, resolvedDocsDir);
+        logger.info(
+          `TechDocs editor: saved ${body.files.length} files locally for ${stringifyEntityRef(
+            entity,
+          )} at ${savedPath}`,
+        );
+
+        res.json({
+          savedLocally: true,
+          savedCount: body.files.length,
+          savedPath,
+        });
+        return;
+      }
 
       logger.info(
         `TechDocs editor: opened PR ${result.number} for ${stringifyEntityRef(
