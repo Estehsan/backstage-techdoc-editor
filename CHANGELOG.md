@@ -1,3 +1,15 @@
+# [1.1.0](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.0.4...techdocs-editor-v1.1.0) (2026-06-06)
+
+
+### Bug Fixes
+
+* replace @material-ui/lab Alert with Snackbar message prop ([72fab33](https://github.com/Estehsan/backstage-techdoc-editor/commit/72fab335d2286b9eb70381d83e9676c9adb2ffcc))
+
+
+### Features
+
+* add local filesystem support for dir: techdocs annotations ([f28ad1c](https://github.com/Estehsan/backstage-techdoc-editor/commit/f28ad1c6c3ae7532a089a92b1cb3b6d50406ec5c))
+
 ## [1.0.4](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.0.3...techdocs-editor-v1.0.4) (2026-06-05)
 
 
