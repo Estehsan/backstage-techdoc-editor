@@ -21,6 +21,8 @@
  */
 
 export { TechDocsEditPageAddon } from './addons/TechDocsEditPageAddon';
+export { EditorPageContent } from './components/EditorPageContent';
+export { EntityEditorContent } from './components/EntityEditorContent';
 export {
   techdocsEditorPlugin,
   TechdocsEditorPage,

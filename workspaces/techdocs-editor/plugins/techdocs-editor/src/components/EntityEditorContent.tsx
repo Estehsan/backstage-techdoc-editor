@@ -20,7 +20,7 @@ import { TechDocsEditorPage } from '@estehsaan/backstage-plugin-techdocs-editor-
 
 /**
  * Entity content for the TechDocs editor. Resolves the entity from the current
- * catalog context and renders the shared {@link TechDocsEditorPage}.
+ * catalog context and renders the shared `TechDocsEditorPage`.
  *
  * Shared between the classic entity content extension and the new frontend
  * system entity content extension.

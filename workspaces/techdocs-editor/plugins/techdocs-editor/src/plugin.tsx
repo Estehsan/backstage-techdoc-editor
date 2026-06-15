@@ -31,7 +31,7 @@ import { editorRouteRef } from './routes';
 /**
  * Classic (old frontend system) plugin for the in-app TechDocs editor.
  *
- * Registers the {@link TechDocsEditorApiRef} implementation and provides the
+ * Registers the `TechDocsEditorApiRef` implementation and provides the
  * routable editor page and the entity content extensions.
  *
  * @public

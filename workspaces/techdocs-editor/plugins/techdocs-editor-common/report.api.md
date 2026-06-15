@@ -46,6 +46,7 @@ export type MkDocsConfig = {
   repo_url?: string;
   edit_uri?: string;
   nav?: MkDocsNavEntry[];
+  isLocalSource?: boolean;
 };
 
 // @public (undocumented)

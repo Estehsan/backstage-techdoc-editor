@@ -21,7 +21,7 @@ import { TechDocsEditorPage } from '@estehsaan/backstage-plugin-techdocs-editor-
 /**
  * Standalone editor page content. Resolves the target entity from the route
  * params (`/:namespace/:kind/:name`) and the optional initial file from the
- * `?file` search param, then renders the shared {@link TechDocsEditorPage}.
+ * `?file` search param, then renders the shared `TechDocsEditorPage`.
  *
  * Shared between the classic routable extension and the new frontend system
  * page extension.
