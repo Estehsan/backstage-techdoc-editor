@@ -1,3 +1,16 @@
+# [1.2.0](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.1.0...techdocs-editor-v1.2.0) (2026-06-15)
+
+
+### Bug Fixes
+
+* resolve API report warnings for classic frontend plugin ([5e19b59](https://github.com/Estehsan/backstage-techdoc-editor/commit/5e19b59da2936383a246251ac6adb1c249ecd103))
+
+
+### Features
+
+* add isLocalSource type and fix test environment for classic plugin ([876f7ef](https://github.com/Estehsan/backstage-techdoc-editor/commit/876f7ef45b23b186cc2b9bd891dd607a2a7bf308))
+* implement classic TechDocs editor with routing and entity support 🎉 ([db8bed8](https://github.com/Estehsan/backstage-techdoc-editor/commit/db8bed8824b8a72e1f6623c5cccfa62cca0320cc))
+
 # [1.1.0](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.0.4...techdocs-editor-v1.1.0) (2026-06-06)
 
 
