@@ -59,6 +59,8 @@ export type MkDocsConfig = {
   repo_url?: string;
   edit_uri?: string;
   nav?: MkDocsNavEntry[];
+  /** True when the documentation source is a local filesystem path (dir: annotation). */
+  isLocalSource?: boolean;
 };
 
 /** @public */

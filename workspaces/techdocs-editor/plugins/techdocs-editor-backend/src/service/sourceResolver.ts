@@ -55,21 +55,23 @@ function assertSafeDocsDir(docsDir: string): void {
 }
 
 /**
- * Validates that a local path does not escape the allowed working directory.
+ * Validates that a candidate path does not escape the allowed root directory.
  * Throws InputError on any path traversal attempt.
  *
  * @internal
  */
-function assertSafeLocalPath(basePath: string, workingDir: string): void {
-  const normalizedBase = path.normalize(path.resolve(workingDir, basePath));
-  const normalizedWork = path.normalize(workingDir);
+function assertSafeLocalPath(candidatePath: string, allowedRoot: string): void {
+  const normalizedCandidate = path.normalize(
+    path.resolve(allowedRoot, candidatePath),
+  );
+  const normalizedRoot = path.normalize(allowedRoot);
 
   if (
-    !normalizedBase.startsWith(normalizedWork + path.sep) &&
-    normalizedBase !== normalizedWork
+    !normalizedCandidate.startsWith(normalizedRoot + path.sep) &&
+    normalizedCandidate !== normalizedRoot
   ) {
     throw new InputError(
-      `Path '${basePath}' resolves outside the Backstage working directory. ` +
+      `Path '${candidatePath}' resolves outside the allowed source directory. ` +
         `This may be a path traversal attempt.`,
     );
   }
@@ -181,14 +183,14 @@ export async function resolveSource(
   if (annotation && annotation.type === 'dir') {
     const dirRelativePath = annotation.target; // e.g., ".", "./docs", "custom-docs"
     const basePath = resolveLocalBasePath(entity, config);
-    const workingDir =
-      config.getOptionalString('backend.workingDirectory') ?? process.cwd();
 
     // Resolve absolute path
     const absolutePath = path.resolve(basePath, dirRelativePath);
 
-    // Security: Prevent path traversal outside working directory
-    assertSafeLocalPath(absolutePath, workingDir);
+    // Security: the dir: target must stay within the entity's source-location
+    // root (the folder its catalog-info.yaml was loaded from). Filesystem
+    // operations are additionally sandboxed by LocalFsVcsProvider.
+    assertSafeLocalPath(absolutePath, basePath);
 
     return {
       type: 'local',

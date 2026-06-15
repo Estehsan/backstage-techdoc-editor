@@ -23,16 +23,13 @@ import {
 } from '@backstage/frontend-plugin-api';
 import { discoveryApiRef, fetchApiRef } from '@backstage/core-plugin-api';
 import { EntityContentBlueprint } from '@backstage/plugin-catalog-react/alpha';
-import { useSearchParams, useParams } from 'react-router-dom';
 import {
   TechDocsEditorApiRef,
   TechDocsEditorClient,
-  TechDocsEditorPage,
 } from '@estehsaan/backstage-plugin-techdocs-editor-react';
-import { useEntity } from '@backstage/plugin-catalog-react';
-import { parseEntityRef } from '@backstage/catalog-model';
-import { TECHDOCS_ANNOTATION } from '@backstage/plugin-techdocs-common';
 import { editorRouteRef } from '../routes';
+import { EditorPageContent } from '../components/EditorPageContent';
+import { EntityEditorContent } from '../components/EntityEditorContent';
 
 // ── API ──────────────────────────────────────────────────────────────────────
 
@@ -52,25 +49,6 @@ const techdocsEditorApiExtension = ApiBlueprint.make({
 
 // ── Standalone editor page ───────────────────────────────────────────────────
 
-const EditorPageContent = () => {
-  const [searchParams] = useSearchParams();
-  const initialPath = searchParams.get('file') ?? undefined;
-
-  // Extract entity ref from route params (path: /docs/:namespace/:kind/:name/edit)
-  const { namespace, kind, name } = useParams<{
-    namespace: string;
-    kind: string;
-    name: string;
-  }>();
-
-  if (!namespace || !kind || !name) {
-    return null;
-  }
-
-  const entityRef = parseEntityRef(`${kind}:${namespace}/${name}`);
-  return <TechDocsEditorPage entityRef={entityRef} initialPath={initialPath} />;
-};
-
 /**
  * @alpha
  */
@@ -85,24 +63,6 @@ export const techdocsEditorExtensionPage = PageBlueprint.make({
 
 // ── Entity content tab ───────────────────────────────────────────────────────
 
-const EditorTabContent = () => {
-  const { entity } = useEntity();
-  const hasTechDocs = Boolean(
-    entity.metadata.annotations?.[TECHDOCS_ANNOTATION],
-  );
-  const entityRef = {
-    namespace: entity.metadata.namespace ?? 'default',
-    kind: entity.kind,
-    name: entity.metadata.name,
-  };
-  return (
-    <TechDocsEditorPage
-      entityRef={entityRef}
-      hasTechDocsAnnotation={hasTechDocs}
-    />
-  );
-};
-
 /**
  * @alpha
  */
@@ -113,7 +73,7 @@ export const techdocsEditorAddonExtension: ExtensionDefinition =
       path: '/edit-docs',
       title: 'Edit Docs',
       filter: 'has:annotation:backstage.io/techdocs-ref',
-      loader: async () => <EditorTabContent />,
+      loader: async () => <EntityEditorContent />,
     },
   });
 
