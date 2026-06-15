@@ -41,6 +41,7 @@ import express, { Request, Response } from 'express';
 import Router from 'express-promise-router';
 import yaml from 'js-yaml';
 import { VcsProviderRegistry } from './VcsProviderRegistry';
+import { LocalFsVcsProvider } from './LocalFsVcsProvider';
 import { resolveSource } from './sourceResolver';
 
 /**
@@ -266,10 +267,8 @@ export async function createRouter(
           // mkdocs.yml not found — use default
         }
 
-        const provider = providerRegistry.getForUrl(repoUrl);
-        if (!provider) {
-          throw new InputError(`No VcsProvider for ${repoUrl}`);
-        }
+        const provider =
+          providerRegistry.getForUrl(repoUrl) ?? new LocalFsVcsProvider();
 
         files = await provider.listFiles({
           repoUrl,
@@ -360,7 +359,9 @@ export async function createRouter(
           (await provider.getDefaultBranch(repoUrl));
       }
 
-      const provider = providerRegistry.getForUrl(repoUrl);
+      const provider =
+        providerRegistry.getForUrl(repoUrl) ??
+        (repoUrl.startsWith('file://') ? new LocalFsVcsProvider() : undefined);
       if (!provider) {
         throw new InputError(`No VcsProvider for ${repoUrl}`);
       }
@@ -444,7 +445,9 @@ export async function createRouter(
         resolvedDocsDir = source.docsDir ?? 'docs';
       }
 
-      const provider = providerRegistry.getForUrl(repoUrl);
+      const provider =
+        providerRegistry.getForUrl(repoUrl) ??
+        (repoUrl.startsWith('file://') ? new LocalFsVcsProvider() : undefined);
       if (!provider) {
         throw new InputError(`No VcsProvider for ${repoUrl}`);
       }
