@@ -22,6 +22,11 @@
 
 export { TechDocsEditPageAddon } from './addons/TechDocsEditPageAddon';
 export {
+  techdocsEditorPlugin,
+  TechdocsEditorPage,
+  EntityTechdocsEditorContent,
+} from './plugin';
+export {
   TechDocsEditorApiRef,
   TechDocsEditorClient,
 } from '@estehsaan/backstage-plugin-techdocs-editor-react';
