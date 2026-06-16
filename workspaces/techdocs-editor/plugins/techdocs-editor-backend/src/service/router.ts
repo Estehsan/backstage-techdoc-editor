@@ -43,6 +43,7 @@ import yaml from 'js-yaml';
 import { VcsProviderRegistry } from './VcsProviderRegistry';
 import { LocalFsVcsProvider } from './LocalFsVcsProvider';
 import { resolveSource } from './sourceResolver';
+import { VcsProvider } from '@estehsaan/backstage-plugin-techdocs-editor-node';
 
 /**
  * Validates that a file path supplied by the client is relative, contains only
@@ -124,7 +125,27 @@ export async function createRouter(
     if (!entity) {
       throw new NotFoundError(`Entity ${kind}:${namespace}/${name} not found`);
     }
-    return { entity, credentials };
+
+    // Follow backstage.io/techdocs-entity indirection so the editor can resolve
+    // the source from the referenced entity rather than from this entity.
+    const techdocsEntityRef =
+      entity.metadata.annotations?.['backstage.io/techdocs-entity'];
+    let docEntity = entity;
+    if (techdocsEntityRef) {
+      const refParsed = parseEntityRef(techdocsEntityRef, {
+        defaultNamespace: entity.metadata.namespace ?? 'default',
+        defaultKind: 'Component',
+      });
+      const referenced = await catalog.getEntityByRef(refParsed, { token });
+      if (!referenced) {
+        throw new NotFoundError(
+          `Entity referenced by 'backstage.io/techdocs-entity' annotation not found: ${techdocsEntityRef}`,
+        );
+      }
+      docEntity = referenced;
+    }
+
+    return { entity, docEntity, credentials };
   }
 
   // ─── Helper: authorize ───────────────────────────────────────────────────
@@ -147,10 +168,10 @@ export async function createRouter(
     async (req: Request, res: Response) => {
       await authorize(req, techdocsEditorReadPermission);
       const { namespace, kind, name } = req.params;
-      const { entity } = await loadEntity(req, namespace, kind, name);
+      const { docEntity } = await loadEntity(req, namespace, kind, name);
 
       const source = await resolveSource(
-        entity,
+        docEntity,
         scmIntegrations,
         reader,
         config,
@@ -234,10 +255,10 @@ export async function createRouter(
     async (req: Request, res: Response) => {
       await authorize(req, techdocsEditorReadPermission);
       const { namespace, kind, name } = req.params;
-      const { entity } = await loadEntity(req, namespace, kind, name);
+      const { docEntity } = await loadEntity(req, namespace, kind, name);
 
       const source = await resolveSource(
-        entity,
+        docEntity,
         scmIntegrations,
         reader,
         config,
@@ -267,8 +288,7 @@ export async function createRouter(
           // mkdocs.yml not found — use default
         }
 
-        const provider =
-          providerRegistry.getForUrl(repoUrl) ?? new LocalFsVcsProvider();
+        const provider = new LocalFsVcsProvider();
 
         files = await provider.listFiles({
           repoUrl,
@@ -313,10 +333,10 @@ export async function createRouter(
       }
       assertSafeDocPath(filePath);
 
-      const { entity } = await loadEntity(req, namespace, kind, name);
+      const { docEntity } = await loadEntity(req, namespace, kind, name);
 
       const source = await resolveSource(
-        entity,
+        docEntity,
         scmIntegrations,
         reader,
         config,
@@ -325,6 +345,7 @@ export async function createRouter(
       let repoUrl: string;
       let branch: string;
       let resolvedDocsDir: string;
+      let provider: VcsProvider;
 
       if (source.type === 'local') {
         repoUrl = `file://${source.basePath}`;
@@ -344,26 +365,23 @@ export async function createRouter(
         } catch {
           // mkdocs.yml not found — use default
         }
+
+        provider = new LocalFsVcsProvider();
       } else {
         repoUrl = source.repoUrl;
         resolvedDocsDir = source.docsDir ?? 'docs';
 
-        const provider = providerRegistry.getForUrl(repoUrl);
-        if (!provider) {
+        const vcsProvider = providerRegistry.getForUrl(repoUrl);
+        if (!vcsProvider) {
           throw new InputError(`No VcsProvider for ${repoUrl}`);
         }
 
         branch =
           (req.query.branch as string | undefined) ??
           source.defaultBranch ??
-          (await provider.getDefaultBranch(repoUrl));
-      }
+          (await vcsProvider.getDefaultBranch(repoUrl));
 
-      const provider =
-        providerRegistry.getForUrl(repoUrl) ??
-        (repoUrl.startsWith('file://') ? new LocalFsVcsProvider() : undefined);
-      if (!provider) {
-        throw new InputError(`No VcsProvider for ${repoUrl}`);
+        provider = vcsProvider;
       }
 
       const fullPath = `${resolvedDocsDir}/${filePath}`;
@@ -400,7 +418,7 @@ export async function createRouter(
         assertSafeDocPath(file.path);
       }
 
-      const { entity, credentials } = await loadEntity(
+      const { entity, docEntity, credentials } = await loadEntity(
         req,
         namespace,
         kind,
@@ -409,7 +427,7 @@ export async function createRouter(
       const user = await userInfo.getUserInfo(credentials);
 
       const source = await resolveSource(
-        entity,
+        docEntity,
         scmIntegrations,
         reader,
         config,
@@ -445,12 +463,14 @@ export async function createRouter(
         resolvedDocsDir = source.docsDir ?? 'docs';
       }
 
-      const provider =
-        providerRegistry.getForUrl(repoUrl) ??
-        (repoUrl.startsWith('file://') ? new LocalFsVcsProvider() : undefined);
-      if (!provider) {
-        throw new InputError(`No VcsProvider for ${repoUrl}`);
-      }
+      const provider: VcsProvider =
+        source.type === 'local'
+          ? new LocalFsVcsProvider()
+          : (() => {
+              const p = providerRegistry.getForUrl(repoUrl);
+              if (!p) throw new InputError(`No VcsProvider for ${repoUrl}`);
+              return p;
+            })();
 
       const baseBranch =
         body.baseBranch ??

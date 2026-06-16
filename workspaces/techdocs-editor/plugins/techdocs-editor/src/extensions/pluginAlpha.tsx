@@ -23,6 +23,7 @@ import {
 } from '@backstage/frontend-plugin-api';
 import { discoveryApiRef, fetchApiRef } from '@backstage/core-plugin-api';
 import { EntityContentBlueprint } from '@backstage/plugin-catalog-react/alpha';
+import { Entity } from '@backstage/catalog-model';
 import {
   TechDocsEditorApiRef,
   TechDocsEditorClient,
@@ -30,6 +31,17 @@ import {
 import { editorRouteRef } from '../routes';
 import { EditorPageContent } from '../components/EditorPageContent';
 import { EntityEditorContent } from '../components/EntityEditorContent';
+
+const TECHDOCS_ANNOTATION = 'backstage.io/techdocs-ref';
+const TECHDOCS_ENTITY_ANNOTATION = 'backstage.io/techdocs-entity';
+
+/** Show the Edit Docs tab for entities that have either TechDocs annotation. */
+function hasTechDocsAnnotation(entity: Entity): boolean {
+  const annotations = entity.metadata.annotations ?? {};
+  return Boolean(
+    annotations[TECHDOCS_ANNOTATION] || annotations[TECHDOCS_ENTITY_ANNOTATION],
+  );
+}
 
 // ── API ──────────────────────────────────────────────────────────────────────
 
@@ -72,7 +84,7 @@ export const techdocsEditorAddonExtension: ExtensionDefinition =
     params: {
       path: '/edit-docs',
       title: 'Edit Docs',
-      filter: 'has:annotation:backstage.io/techdocs-ref',
+      filter: hasTechDocsAnnotation,
       loader: async () => <EntityEditorContent />,
     },
   });

@@ -63,28 +63,42 @@ export const app = createApp({
 The plugin automatically registers:
 
 - An **entity content tab** at `/edit-docs` on any entity that has TechDocs
-- A **standalone editor page** at `/techdocs-editor/:namespace/:kind/:name`
+- A **standalone editor page** at `/docs/:namespace/:kind/:name/edit`
 
 ### Classic Frontend System (Backstage < 1.30)
 
-Add the TechDocs addon to your `TechDocsReaderPage` in `packages/app/src/App.tsx`:
+The classic plugin auto-registers the editor API, so no manual `createApiFactory`
+is required. Add the standalone editor page to your `FlatRoutes` and, optionally,
+the editor tab to your catalog entity page.
 
 ```tsx
-import {
-  TechDocsEditPageAddon,
-  TechDocsEditorApiRef,
-  TechDocsEditorClient,
-} from '@estehsaan/backstage-plugin-techdocs-editor';
+// packages/app/src/App.tsx
+import { TechdocsEditorPage } from '@estehsaan/backstage-plugin-techdocs-editor';
 
-// Bind the API (add this near your other createApiFactory calls)
-createApiFactory({
-  api: TechDocsEditorApiRef,
-  deps: { discoveryApi: discoveryApiRef, fetchApi: fetchApiRef },
-  factory: ({ discoveryApi, fetchApi }) =>
-    new TechDocsEditorClient(discoveryApi, fetchApi),
-});
+<FlatRoutes>
+  {/* ...other routes */}
+  <Route
+    path="/docs/:namespace/:kind/:name/edit"
+    element={<TechdocsEditorPage />}
+  />
+</FlatRoutes>;
+```
 
-// In your TechDocsReaderPage:
+```tsx
+// packages/app/src/components/catalog/EntityPage.tsx
+import { EntityTechdocsEditorContent } from '@estehsaan/backstage-plugin-techdocs-editor';
+
+<EntityLayout.Route path="/edit-docs" title="Edit Docs">
+  <EntityTechdocsEditorContent />
+</EntityLayout.Route>;
+```
+
+Optionally add the "Edit this page" button to the TechDocs reader by mounting the
+addon inside your `TechDocsReaderPage`:
+
+```tsx
+import { TechDocsEditPageAddon } from '@estehsaan/backstage-plugin-techdocs-editor';
+
 <TechDocsReaderPage>
   <TechDocsEditPageAddon />
 </TechDocsReaderPage>;
@@ -92,12 +106,15 @@ createApiFactory({
 
 ## Exported API
 
-| Export                  | Type            | Description                                                      |
-| ----------------------- | --------------- | ---------------------------------------------------------------- |
-| `TechDocsEditPageAddon` | React component | TechDocs addon that injects the edit button into the reader page |
-| `TechDocsEditorApiRef`  | `ApiRef`        | Backstage API ref for the editor REST client                     |
-| `TechDocsEditorClient`  | Class           | Default implementation of `TechDocsEditorApi`                    |
-| `TechDocsEditorApi`     | TypeScript type | Interface for the editor API client                              |
+| Export                        | Type              | Description                                                      |
+| ----------------------------- | ----------------- | ---------------------------------------------------------------- |
+| `techdocsEditorPlugin`        | `BackstagePlugin` | Classic frontend system plugin (registers the editor API)        |
+| `TechdocsEditorPage`          | React component   | Routable standalone editor page for `FlatRoutes`                 |
+| `EntityTechdocsEditorContent` | React component   | Entity content for the catalog entity page                       |
+| `TechDocsEditPageAddon`       | React component   | TechDocs addon that injects the edit button into the reader page |
+| `TechDocsEditorApiRef`        | `ApiRef`          | Backstage API ref for the editor REST client                     |
+| `TechDocsEditorClient`        | Class             | Default implementation of `TechDocsEditorApi`                    |
+| `TechDocsEditorApi`           | TypeScript type   | Interface for the editor API client                              |
 
 ### `/alpha` exports (New Frontend System only)
 
