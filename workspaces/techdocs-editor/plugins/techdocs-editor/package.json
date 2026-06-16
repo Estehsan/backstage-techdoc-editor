@@ -105,15 +105,7 @@
   },
   "jest": {
     "moduleNameMapper": {
-      "\\.(css|less|scss|sss|styl)$": "jest-css-modules",
-      "^react$": "<rootDir>/../../../../node_modules/react/index.js",
-      "^react/(.*)$": "<rootDir>/../../../../node_modules/react/$1",
-      "^react-dom$": "<rootDir>/../../../../node_modules/react-dom/index.js",
-      "^react-dom/(.*)$": "<rootDir>/../../../../node_modules/react-dom/$1",
-      "^react-router-dom$": "<rootDir>/../../../../node_modules/react-router-dom/dist/index.js",
-      "^react-router-dom/(.*)$": "<rootDir>/../../../../node_modules/react-router-dom/$1",
-      "^react-router$": "<rootDir>/../../../../node_modules/react-router/dist/index.js",
-      "^react-router/(.*)$": "<rootDir>/../../../../node_modules/react-router/$1"
+      "\\.(css|less|scss|sss|styl)$": "jest-css-modules"
     }
   }
 }
