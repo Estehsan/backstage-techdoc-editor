@@ -14383,6 +14383,7 @@ __metadata:
     prettier: "npm:^3.0.0"
     react: "npm:^18.0.2"
     react-dom: "npm:^18.0.2"
+    react-router-dom: "npm:^6.3.0"
     semantic-release: "npm:^24.0.0"
     semantic-release-yarn: "npm:^3.0.0"
     typescript: "npm:~5.4.0"

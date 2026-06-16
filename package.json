@@ -44,6 +44,7 @@
     "prettier": "^3.0.0",
     "react": "^18.0.2",
     "react-dom": "^18.0.2",
+    "react-router-dom": "^6.3.0",
     "semantic-release": "^24.0.0",
     "semantic-release-yarn": "^3.0.0",
     "typescript": "~5.4.0"
