@@ -73,7 +73,7 @@
     "@backstage/catalog-model": "^1.7.6",
     "@backstage/core-components": "^0.18.7",
     "@backstage/core-plugin-api": "^1.12.3",
-    "@backstage/plugin-catalog-react": "^2.0.0",
+    "@backstage/plugin-catalog-react": "^3.0.0",
     "@backstage/plugin-techdocs-common": "^0.1.1",
     "@estehsaan/backstage-plugin-techdocs-editor-common": "workspace:^",
     "@material-ui/core": "^4.12.4",
