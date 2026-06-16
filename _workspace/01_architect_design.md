@@ -95,10 +95,11 @@ export type ResolvedSource =
 **No changes to extension point interface required.**
 
 The existing `VcsProvider` interface already supports all operations needed:
+
 - `canHandle(repoUrl)`: For local, we use a pseudo-URL like `file:///path/to/docs`
 - `readFile()`: Read from local fs instead of remote API
 - `listFiles()`: List local directory
-- `getDefaultBranch()`: Return a sentinel value like `"local"` 
+- `getDefaultBranch()`: Return a sentinel value like `"local"`
 - `openPullRequest()`: For local, write files directly and return a synthetic result
 
 The `LocalFsVcsProvider` will implement `VcsProvider` and handle the `file://` URL scheme.
@@ -109,20 +110,22 @@ The `LocalFsVcsProvider` will implement `VcsProvider` and handle the `file://` U
 
 ### Modified Endpoints
 
-| Method | Path | Changes | Notes |
-|--------|------|---------|-------|
-| GET | `/sources/:ns/:kind/:name/mkdocs` | Now handles `dir:` annotations | Returns same shape; uses local fs when applicable |
-| GET | `/sources/:ns/:kind/:name/tree` | Now handles `dir:` annotations | Same response shape |
-| GET | `/sources/:ns/:kind/:name/file` | Now handles `dir:` annotations | Same response shape |
-| POST | `/submissions/:ns/:kind/:name` | Returns different shape for local | `prTitle` becomes optional; response includes `savedLocally` flag |
+| Method | Path                              | Changes                           | Notes                                                             |
+| ------ | --------------------------------- | --------------------------------- | ----------------------------------------------------------------- |
+| GET    | `/sources/:ns/:kind/:name/mkdocs` | Now handles `dir:` annotations    | Returns same shape; uses local fs when applicable                 |
+| GET    | `/sources/:ns/:kind/:name/tree`   | Now handles `dir:` annotations    | Same response shape                                               |
+| GET    | `/sources/:ns/:kind/:name/file`   | Now handles `dir:` annotations    | Same response shape                                               |
+| POST   | `/submissions/:ns/:kind/:name`    | Returns different shape for local | `prTitle` becomes optional; response includes `savedLocally` flag |
 
 ### Request/Response Changes
 
 **POST /submissions** — Request:
+
 - `prTitle` becomes optional (ignored for local saves)
 - `prDescription`, `draft`, `baseBranch` ignored for local saves
 
 **POST /submissions** — Response for local save:
+
 ```json
 {
   "savedLocally": true,
@@ -132,6 +135,7 @@ The `LocalFsVcsProvider` will implement `VcsProvider` and handle the `file://` U
 ```
 
 **POST /submissions** — Response for VCS (unchanged):
+
 ```json
 {
   "pullRequestUrl": "https://github.com/org/repo/pull/42",
@@ -185,18 +189,17 @@ export async function resolveSource(
 **Security: Path traversal prevention:**
 
 ```typescript
-function assertSafeLocalPath(
-  basePath: string,
-  workingDir: string,
-): void {
+function assertSafeLocalPath(basePath: string, workingDir: string): void {
   const normalizedBase = path.normalize(path.resolve(workingDir, basePath));
   const normalizedWork = path.normalize(workingDir);
-  
-  if (!normalizedBase.startsWith(normalizedWork + path.sep) &&
-      normalizedBase !== normalizedWork) {
+
+  if (
+    !normalizedBase.startsWith(normalizedWork + path.sep) &&
+    normalizedBase !== normalizedWork
+  ) {
     throw new InputError(
       `Path '${basePath}' resolves outside the Backstage working directory. ` +
-      `This may be a path traversal attempt.`,
+        `This may be a path traversal attempt.`,
     );
   }
 }
@@ -208,7 +211,12 @@ function assertSafeLocalPath(
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { VcsProvider, OpenPrOptions, OpenPrResult, VcsFileResult } from '@estehsaan/backstage-plugin-techdocs-editor-node';
+import {
+  VcsProvider,
+  OpenPrOptions,
+  OpenPrResult,
+  VcsFileResult,
+} from '@estehsaan/backstage-plugin-techdocs-editor-node';
 import { NotFoundError } from '@backstage/errors';
 
 /**
@@ -235,10 +243,10 @@ export class LocalFsVcsProvider implements VcsProvider {
   }): Promise<VcsFileResult> {
     const basePath = this.urlToPath(opts.repoUrl);
     const fullPath = path.join(basePath, opts.filePath);
-    
+
     // Security check
     this.assertWithinBase(fullPath, basePath);
-    
+
     try {
       const content = await fs.readFile(fullPath, 'utf-8');
       const stat = await fs.stat(fullPath);
@@ -264,9 +272,9 @@ export class LocalFsVcsProvider implements VcsProvider {
   }): Promise<string[]> {
     const basePath = this.urlToPath(opts.repoUrl);
     const fullDir = path.join(basePath, opts.dirPath);
-    
+
     this.assertWithinBase(fullDir, basePath);
-    
+
     const files: string[] = [];
     await this.walkDir(fullDir, opts.dirPath, files);
     return files.sort();
@@ -274,13 +282,13 @@ export class LocalFsVcsProvider implements VcsProvider {
 
   async openPullRequest(opts: OpenPrOptions): Promise<OpenPrResult> {
     const basePath = this.urlToPath(opts.repoUrl);
-    
+
     // Write each file directly to disk
     let savedCount = 0;
     for (const [filePath, content] of opts.files) {
       const fullPath = path.join(basePath, filePath);
       this.assertWithinBase(fullPath, basePath);
-      
+
       if (content === null) {
         // Delete file
         await fs.unlink(fullPath).catch(() => {});
@@ -291,7 +299,7 @@ export class LocalFsVcsProvider implements VcsProvider {
       }
       savedCount++;
     }
-    
+
     // Return synthetic result — no actual PR
     return {
       url: '', // Frontend will check savedLocally flag instead
@@ -307,7 +315,10 @@ export class LocalFsVcsProvider implements VcsProvider {
   private assertWithinBase(targetPath: string, basePath: string): void {
     const resolved = path.resolve(targetPath);
     const resolvedBase = path.resolve(basePath);
-    if (!resolved.startsWith(resolvedBase + path.sep) && resolved !== resolvedBase) {
+    if (
+      !resolved.startsWith(resolvedBase + path.sep) &&
+      resolved !== resolvedBase
+    ) {
       throw new InputError(
         `Path '${targetPath}' is outside the allowed base path.`,
       );
@@ -345,14 +356,14 @@ if (source.type === 'local') {
   // Local filesystem flow — no PR, just write files
   const basePath = source.basePath;
   const docsDir = source.docsDir;
-  
+
   // Validate paths and write files
   for (const file of body.files) {
     assertSafeDocPath(file.path);
     const fullPath = path.join(basePath, docsDir, file.path);
     // Security check
     assertWithinBase(fullPath, basePath);
-    
+
     if (file.content === null) {
       await fs.unlink(fullPath).catch(() => {});
     } else {
@@ -360,11 +371,11 @@ if (source.type === 'local') {
       await fs.writeFile(fullPath, file.content, 'utf-8');
     }
   }
-  
+
   logger.info(
     `TechDocs editor: saved ${body.files.length} files locally for ${stringifyEntityRef(entity)} at ${path.join(basePath, docsDir)}`,
   );
-  
+
   res.json({
     savedLocally: true,
     savedCount: body.files.length,
@@ -429,7 +440,7 @@ export type SubmitEditsDialogProps = {
   }) => Promise<void>;
   defaultPrTitle?: string;
   /** If true, hide PR fields and show local save UI */
-  isLocalSource?: boolean;  // NEW
+  isLocalSource?: boolean; // NEW
 };
 ```
 
@@ -454,10 +465,10 @@ export type SubmitEditsDialogProps = {
 
 // Button text changes
 <Button ...>
-  {loading 
-    ? 'Saving…' 
-    : isLocalSource 
-      ? 'Save to Disk' 
+  {loading
+    ? 'Saving…'
+    : isLocalSource
+      ? 'Save to Disk'
       : 'Open Pull Request'}
 </Button>
 ```
@@ -518,19 +529,19 @@ useEffect(() => {
 **Handle submit response:**
 
 ```typescript
-const handleSubmit = async (opts) => {
+const handleSubmit = async opts => {
   const files: EditedFile[] = Array.from(editedFiles.values());
   const result = await api.submitEdits(entityRef, {
     files,
-    prTitle: opts.prTitle,     // Will be ignored for local
+    prTitle: opts.prTitle, // Will be ignored for local
     prDescription: opts.prDescription,
     commitMessage: opts.commitMessage,
     draft: opts.draft,
   });
-  
+
   setEditedFiles(new Map());
   setSubmitOpen(false);
-  
+
   // Different behavior based on response
   if (result.savedLocally) {
     // Show success notification (no new window)
@@ -547,11 +558,11 @@ To let the frontend know whether it's dealing with local docs:
 
 ```typescript
 // In router.ts GET /tree handler:
-res.json({ 
-  files, 
-  docsDir: resolvedDocsDir, 
+res.json({
+  files,
+  docsDir: resolvedDocsDir,
   branch,
-  isLocalSource: source.type === 'local',  // NEW
+  isLocalSource: source.type === 'local', // NEW
 });
 ```
 
@@ -601,9 +612,11 @@ function assertPathWithinRoot(
 ): void {
   const normalizedTarget = path.normalize(path.resolve(targetPath));
   const normalizedRoot = path.normalize(path.resolve(rootPath));
-  
-  if (!normalizedTarget.startsWith(normalizedRoot + path.sep) &&
-      normalizedTarget !== normalizedRoot) {
+
+  if (
+    !normalizedTarget.startsWith(normalizedRoot + path.sep) &&
+    normalizedTarget !== normalizedRoot
+  ) {
     throw new InputError(
       `Invalid ${label}: path '${targetPath}' is outside the allowed root '${rootPath}'`,
     );
