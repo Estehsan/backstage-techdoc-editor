@@ -29,6 +29,35 @@ yarn lint
 yarn prettier:write .
 ```
 
+## Pre-Push Checklist (MANDATORY)
+
+**Run every step below from the submodule root and confirm it passes before any `git push` or commit to an open PR. Do not skip steps. Fix failures before re-running from step 1.**
+
+```bash
+# 1. Immutable install — no YN0028 errors
+yarn install --immutable
+
+# 2. Type check — zero errors required
+yarn tsc
+
+# 3. Prettier check — zero violations required
+yarn prettier:check
+
+# 4. Build all packages
+yarn build:all
+
+# 5. Build API reports
+yarn build:api-reports:only
+
+# 6. Lint — zero errors required
+yarn lint
+
+# 7. Tests — must pass
+yarn test
+```
+
+> **Iron law:** `git push` is forbidden until all seven steps produce zero errors.
+
 ## Architecture
 
 The backend plugin (`techdocsEditorPlugin`) exposes REST endpoints for:

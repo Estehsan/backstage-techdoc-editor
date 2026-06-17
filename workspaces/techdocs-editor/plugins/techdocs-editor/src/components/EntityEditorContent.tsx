@@ -18,6 +18,8 @@ import { useEntity } from '@backstage/plugin-catalog-react';
 import { TECHDOCS_ANNOTATION } from '@backstage/plugin-techdocs-common';
 import { TechDocsEditorPage } from '@estehsaan/backstage-plugin-techdocs-editor-react';
 
+const TECHDOCS_ENTITY_ANNOTATION = 'backstage.io/techdocs-entity';
+
 /**
  * Entity content for the TechDocs editor. Resolves the entity from the current
  * catalog context and renders the shared `TechDocsEditorPage`.
@@ -29,8 +31,10 @@ import { TechDocsEditorPage } from '@estehsaan/backstage-plugin-techdocs-editor-
  */
 export function EntityEditorContent() {
   const { entity } = useEntity();
+  // Accept both direct (techdocs-ref) and indirected (techdocs-entity) sources.
   const hasTechDocs = Boolean(
-    entity.metadata.annotations?.[TECHDOCS_ANNOTATION],
+    entity.metadata.annotations?.[TECHDOCS_ANNOTATION] ||
+    entity.metadata.annotations?.[TECHDOCS_ENTITY_ANNOTATION],
   );
   const entityRef = {
     namespace: entity.metadata.namespace ?? 'default',
