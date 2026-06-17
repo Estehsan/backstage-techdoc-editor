@@ -1,3 +1,15 @@
+## [1.2.1](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.2.0...techdocs-editor-v1.2.1) (2026-06-17)
+
+
+### Bug Fixes
+
+* add react-router-dom to root devDependencies to fix CI test resolution ([aa5a2d0](https://github.com/Estehsan/backstage-techdoc-editor/commit/aa5a2d0133cb62249196b3978b0a10a578b08491))
+* align frontend dependency generations ([6d294dd](https://github.com/Estehsan/backstage-techdoc-editor/commit/6d294dd8b754ac58808d499cc5fad4cde33ddb41))
+* fall back to LocalFsVcsProvider for file:// URLs when not in registry ([989fd7b](https://github.com/Estehsan/backstage-techdoc-editor/commit/989fd7b30b142e63205a8ac252c84c1d048642cd))
+* remove problematic jest moduleNameMapper for react modules ([d4f9ef6](https://github.com/Estehsan/backstage-techdoc-editor/commit/d4f9ef69aa130453690409c83d794b4855531b00))
+* update dependencies for React and TypeScript compatibility 🎉🔧 ([67b3cc2](https://github.com/Estehsan/backstage-techdoc-editor/commit/67b3cc2058d4d75c5779e90fa519c57a79d67637))
+* update lockfile and fix lint in dependency alignment test ([feb09b4](https://github.com/Estehsan/backstage-techdoc-editor/commit/feb09b41cd0516e6bea828ef60bf2c3ddec4b717))
+
 # [1.2.0](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.1.0...techdocs-editor-v1.2.0) (2026-06-15)
 
 
