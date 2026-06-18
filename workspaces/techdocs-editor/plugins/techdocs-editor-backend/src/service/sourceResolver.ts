@@ -22,7 +22,9 @@ import { UrlReaderService } from '@backstage/backend-plugin-api';
 import { parseReferenceAnnotation } from '@backstage/plugin-techdocs-node';
 import { TECHDOCS_ANNOTATION } from '@backstage/plugin-techdocs-common';
 import { ResolvedSource } from '@estehsaan/backstage-plugin-techdocs-editor-common';
+import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import yaml from 'js-yaml';
 
 const GITHUB_SLUG_ANNOTATION = 'github.com/project-slug';
 const GITLAB_SLUG_ANNOTATION = 'gitlab.com/project-slug';
@@ -161,6 +163,50 @@ function resolveLocalBasePath(entity: Entity, config: Config): string {
 }
 
 /**
+ * Determine the documentation directory for a local `dir:` source.
+ *
+ * Resolution order:
+ * 1. The `docs_dir` declared in an `mkdocs.yml` at the resolved base path.
+ * 2. The conventional `docs` subdirectory, if it exists.
+ * 3. The base path itself (`.`), so annotations that point directly at a docs
+ *    folder (e.g. `dir:./docs`) are not double-nested into `.../docs/docs`.
+ *
+ * @internal
+ */
+async function resolveLocalDocsDir(basePath: string): Promise<string> {
+  // 1. Prefer docs_dir from mkdocs.yml at the base path.
+  try {
+    const mkdocsContent = await fs.readFile(
+      path.join(basePath, 'mkdocs.yml'),
+      'utf-8',
+    );
+    const parsed = yaml.load(mkdocsContent) as
+      | Record<string, unknown>
+      | undefined;
+    const docsDir = parsed?.docs_dir;
+    if (typeof docsDir === 'string' && docsDir.length > 0) {
+      assertSafeDocsDir(docsDir);
+      return docsDir;
+    }
+  } catch {
+    // No mkdocs.yml or unreadable/invalid — fall through to convention.
+  }
+
+  // 2. Fall back to the conventional `docs/` directory if it exists.
+  try {
+    const stat = await fs.stat(path.join(basePath, 'docs'));
+    if (stat.isDirectory()) {
+      return 'docs';
+    }
+  } catch {
+    // `docs/` does not exist — treat the base path itself as the docs dir.
+  }
+
+  // 3. Otherwise the base path already points at the docs directory.
+  return '.';
+}
+
+/**
  * Resolve the source location from an entity's techdocs annotation.
  * Returns a discriminated union for VCS vs local filesystem sources.
  *
@@ -195,7 +241,7 @@ export async function resolveSource(
     return {
       type: 'local',
       basePath: absolutePath,
-      docsDir: 'docs', // Will be overridden by mkdocs.yml if found
+      docsDir: await resolveLocalDocsDir(absolutePath),
     };
   }
 

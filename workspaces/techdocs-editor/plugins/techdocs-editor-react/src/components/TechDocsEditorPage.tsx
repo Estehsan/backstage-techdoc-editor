@@ -126,6 +126,7 @@ export function TechDocsEditorPage({
   const [mkdocsConfig, setMkdocsConfig] = useState<MkDocsConfig | null>(null);
   const [treeNodes, setTreeNodes] = useState<DocTreeNode[]>([]);
   const [branch, setBranch] = useState<string>('');
+  const [docsDir, setDocsDir] = useState<string | undefined>(undefined);
 
   const [selectedPath, setSelectedPath] = useState<string | undefined>(
     initialPath,
@@ -163,6 +164,7 @@ export function TechDocsEditorPage({
     ])
       .then(([tree, config]) => {
         setBranch(tree.branch);
+        setDocsDir(tree.docsDir);
         setMkdocsConfig(config);
         const nodes: DocTreeNode[] = buildTree(
           tree.nodes.map(n => n.path!).filter(Boolean),
@@ -339,6 +341,8 @@ export function TechDocsEditorPage({
               dirtyPaths={dirtyPaths}
               onSelect={setSelectedPath}
               onCreateFile={handleCreateFile}
+              branch={branch}
+              docsDir={docsDir}
             />
 
             <div className={classes.editorArea}>
