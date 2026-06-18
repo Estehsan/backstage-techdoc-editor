@@ -312,6 +312,14 @@ export async function createRouter(
         });
       }
 
+      if (files.length === 0) {
+        logger.warn(
+          `No documentation files found for ${kind}:${namespace}/${name} ` +
+            `(source=${source.type}, branch=${branch}, docsDir='${resolvedDocsDir}', repo=${repoUrl}). ` +
+            `Verify the entity's 'backstage.io/techdocs-ref' annotation and that the docs directory exists.`,
+        );
+      }
+
       res.json({
         files,
         docsDir: resolvedDocsDir,

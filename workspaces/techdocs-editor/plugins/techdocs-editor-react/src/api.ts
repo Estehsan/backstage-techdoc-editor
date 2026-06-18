@@ -36,7 +36,7 @@ export interface TechDocsEditorApi {
   getMkDocsConfig(entityRef: CompoundEntityRef): Promise<MkDocsConfig>;
   getFileTree(
     entityRef: CompoundEntityRef,
-  ): Promise<DocTree & { branch: string }>;
+  ): Promise<DocTree & { branch: string; docsDir?: string }>;
   getFile(
     entityRef: CompoundEntityRef,
     path: string,
@@ -91,7 +91,7 @@ export class TechDocsEditorClient implements TechDocsEditorApi {
 
   async getFileTree(
     entityRef: CompoundEntityRef,
-  ): Promise<DocTree & { branch: string }> {
+  ): Promise<DocTree & { branch: string; docsDir?: string }> {
     const base = await this.baseUrl();
     const res = await this.fetchApi.fetch(
       `${base}/sources/${this.entityPath(entityRef)}/tree`,
@@ -105,7 +105,12 @@ export class TechDocsEditorClient implements TechDocsEditorApi {
       title: f,
       path: f,
     }));
-    return { nodes, sourceEtag: '', branch: data.branch };
+    return {
+      nodes,
+      sourceEtag: '',
+      branch: data.branch,
+      docsDir: data.docsDir,
+    };
   }
 
   async getFile(

@@ -49,6 +49,7 @@ export interface TechDocsEditorApi {
   getFileTree(entityRef: CompoundEntityRef): Promise<
     DocTree & {
       branch: string;
+      docsDir?: string;
     }
   >;
   // (undocumented)
@@ -80,6 +81,7 @@ export class TechDocsEditorClient implements TechDocsEditorApi {
   getFileTree(entityRef: CompoundEntityRef): Promise<
     DocTree & {
       branch: string;
+      docsDir?: string;
     }
   >;
   // (undocumented)
@@ -113,6 +115,8 @@ export type TechDocsFileTreeProps = {
   dirtyPaths?: Set<string>;
   onSelect: (path: string) => void;
   onCreateFile?: (path: string) => void;
+  branch?: string;
+  docsDir?: string;
 };
 
 // @public

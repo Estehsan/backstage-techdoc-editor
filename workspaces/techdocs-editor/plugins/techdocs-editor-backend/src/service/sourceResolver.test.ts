@@ -18,6 +18,9 @@ import { Entity } from '@backstage/catalog-model';
 import { ConfigReader } from '@backstage/config';
 import { ScmIntegrations } from '@backstage/integration';
 import { UrlReaderService } from '@backstage/backend-plugin-api';
+import { promises as fs } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { resolveSource } from './sourceResolver';
 
 describe('resolveSource', () => {
@@ -31,9 +34,18 @@ describe('resolveSource', () => {
     }),
   );
 
-  // A source-location root that is deliberately unrelated to the backend's
-  // process.cwd(), reproducing the original "outside working directory" bug.
-  const sourceRoot = '/tmp/example-workspace/documented-component';
+  // A real on-disk source-location root, deliberately unrelated to the
+  // backend's process.cwd(), reproducing the original "outside working
+  // directory" bug. Recreated fresh for every test.
+  let sourceRoot: string;
+
+  beforeEach(async () => {
+    sourceRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'techdocs-editor-'));
+  });
+
+  afterEach(async () => {
+    await fs.rm(sourceRoot, { recursive: true, force: true });
+  });
 
   function dirEntity(target: string): Entity {
     return {
@@ -50,7 +62,31 @@ describe('resolveSource', () => {
     };
   }
 
-  it('resolves a dir:. source located outside the backend working directory', async () => {
+  it('uses docs_dir from mkdocs.yml when present at the base path', async () => {
+    await fs.writeFile(
+      path.join(sourceRoot, 'mkdocs.yml'),
+      'site_name: Example\ndocs_dir: documentation\n',
+      'utf-8',
+    );
+    await fs.mkdir(path.join(sourceRoot, 'documentation'));
+
+    const result = await resolveSource(
+      dirEntity('.'),
+      scmIntegrations,
+      reader,
+      config,
+    );
+
+    expect(result).toEqual({
+      type: 'local',
+      basePath: sourceRoot,
+      docsDir: 'documentation',
+    });
+  });
+
+  it('falls back to the conventional docs/ directory when no mkdocs.yml is present', async () => {
+    await fs.mkdir(path.join(sourceRoot, 'docs'));
+
     const result = await resolveSource(
       dirEntity('.'),
       scmIntegrations,
@@ -65,17 +101,39 @@ describe('resolveSource', () => {
     });
   });
 
-  it('resolves a dir: subdirectory within the source root', async () => {
+  it('treats a dir: subdirectory that already is the docs folder as its own docs dir (no double-nesting)', async () => {
+    // Regression: `dir:./docs` previously resolved docsDir to 'docs', causing
+    // the tree endpoint to search '<root>/docs/docs' and return an empty list.
+    const docsPath = path.join(sourceRoot, 'docs');
+    await fs.mkdir(docsPath);
+    await fs.writeFile(path.join(docsPath, 'index.md'), '# Home', 'utf-8');
+
     const result = await resolveSource(
-      dirEntity('./custom-docs'),
+      dirEntity('./docs'),
       scmIntegrations,
       reader,
       config,
     );
 
-    expect(result).toMatchObject({
+    expect(result).toEqual({
       type: 'local',
-      basePath: `${sourceRoot}/custom-docs`,
+      basePath: docsPath,
+      docsDir: '.',
+    });
+  });
+
+  it('treats the base path as the docs dir when neither mkdocs.yml nor docs/ exist', async () => {
+    const result = await resolveSource(
+      dirEntity('.'),
+      scmIntegrations,
+      reader,
+      config,
+    );
+
+    expect(result).toEqual({
+      type: 'local',
+      basePath: sourceRoot,
+      docsDir: '.',
     });
   });
 

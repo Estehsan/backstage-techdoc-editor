@@ -51,6 +51,9 @@ const useStyles = makeStyles(theme => ({
     padding: theme.spacing(1, 2),
     borderBottom: `1px solid ${theme.palette.divider}`,
   },
+  emptyState: {
+    padding: theme.spacing(2),
+  },
   nested: {
     paddingLeft: theme.spacing(3),
   },
@@ -84,6 +87,10 @@ export type TechDocsFileTreeProps = {
   onSelect: (path: string) => void;
   /** Called with the new relative file path (e.g. "guide/setup.md") when the user creates a page */
   onCreateFile?: (path: string) => void;
+  /** Branch the docs were loaded from, shown in the empty state for context */
+  branch?: string;
+  /** Resolved docs directory, shown in the empty state for context */
+  docsDir?: string;
 };
 
 /** Validates a new page path entered by the user. */
@@ -270,6 +277,8 @@ export function TechDocsFileTree({
   dirtyPaths,
   onSelect,
   onCreateFile,
+  branch,
+  docsDir,
 }: TechDocsFileTreeProps) {
   const classes = useStyles();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -310,18 +319,35 @@ export function TechDocsFileTree({
         onClose={() => setDialogOpen(false)}
         onCreate={handleCreate}
       />
-      <List dense component="nav">
-        {nodes.map((node, idx) => (
-          <TreeNodeItem
-            key={node.path ?? node.title ?? idx}
-            node={node}
-            depth={0}
-            selectedPath={selectedPath}
-            dirtyPaths={dirtyPaths}
-            onSelect={onSelect}
-          />
-        ))}
-      </List>
+      {nodes.length === 0 ? (
+        <div className={classes.emptyState}>
+          <Typography variant="body2" color="textSecondary" gutterBottom>
+            No documentation files found
+            {docsDir && docsDir !== '.' ? ` in “${docsDir}”` : ''}
+            {branch ? ` on “${branch}”` : ''}.
+          </Typography>
+          <Typography variant="caption" color="textSecondary">
+            Check the entity's <code>backstage.io/techdocs-ref</code> annotation
+            and that the docs directory exists.
+            {onCreateFile
+              ? ' Use the + button above to create the first page.'
+              : ''}
+          </Typography>
+        </div>
+      ) : (
+        <List dense component="nav">
+          {nodes.map((node, idx) => (
+            <TreeNodeItem
+              key={node.path ?? node.title ?? idx}
+              node={node}
+              depth={0}
+              selectedPath={selectedPath}
+              dirtyPaths={dirtyPaths}
+              onSelect={onSelect}
+            />
+          ))}
+        </List>
+      )}
     </div>
   );
 }
