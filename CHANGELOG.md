@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.2.1...techdocs-editor-v1.2.2) (2026-06-18)
+
+
+### Bug Fixes
+
+* **techdocs-editor:** resolve empty local docs tree ([6c54500](https://github.com/Estehsan/backstage-techdoc-editor/commit/6c5450094f5387144c59b78836524220e14ce368))
+
 ## [1.2.1](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.2.0...techdocs-editor-v1.2.1) (2026-06-17)
 
 

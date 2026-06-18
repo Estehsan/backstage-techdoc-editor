@@ -1,6 +1,6 @@
 {
   "name": "@estehsaan/backstage-plugin-techdocs-editor-backend",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Backend plugin for the TechDocs editor, including VCS integration and pull request publishing",
   "backstage": {
     "role": "backend-plugin",
