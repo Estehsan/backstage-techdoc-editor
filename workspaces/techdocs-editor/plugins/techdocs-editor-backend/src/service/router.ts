@@ -55,10 +55,10 @@ function assertSafeDocPath(filePath: string): void {
   if (/\0/.test(filePath)) {
     throw new InputError('Invalid file path: null bytes are not allowed.');
   }
-  // Whitelist: only alphanumeric, hyphens, underscores, dots, slashes
-  if (!/^[a-zA-Z0-9_\-./]+$/.test(filePath)) {
+  // Whitelist: only alphanumeric, hyphens, underscores, dots, slashes, and @ (for scoped npm packages)
+  if (!/^[a-zA-Z0-9_\-@./]+$/.test(filePath)) {
     throw new InputError(
-      'Invalid file path: only alphanumeric characters, hyphens, underscores, dots, and slashes are allowed.',
+      'Invalid file path: only alphanumeric characters, hyphens, underscores, dots, slashes, and @ are allowed.',
     );
   }
   const normalized = posixPath.normalize(filePath);
