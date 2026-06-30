@@ -1,3 +1,15 @@
+## [1.2.3](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.2.2...techdocs-editor-v1.2.3) (2026-06-30)
+
+
+### Bug Fixes
+
+* **techdocs-editor-backend:** allow @ in doc path validation ([c58d3e8](https://github.com/Estehsan/backstage-techdoc-editor/commit/c58d3e8f9ddee857f4506ac57db9e6b9bdcb8cfe))
+
+
+### Performance Improvements
+
+* **techdocs-editor-react:** avoid per-keystroke re-renders in editor ([dd21bff](https://github.com/Estehsan/backstage-techdoc-editor/commit/dd21bff5c712722aee7234318d8af8b566080b00))
+
 ## [1.2.2](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.2.1...techdocs-editor-v1.2.2) (2026-06-18)
 
 
