@@ -138,6 +138,14 @@ export function TechDocsEditorPage({
   const [editedFiles, setEditedFiles] = useState<Map<string, EditedFile>>(
     new Map(),
   );
+  // Mirror of `editedFiles` for use inside effects that must not re-run on
+  // every keystroke (reading the ref avoids listing `editedFiles` as a dep).
+  const editedFilesRef = useRef(editedFiles);
+  editedFilesRef.current = editedFiles;
+  // Set of paths with unsaved edits. Tracked as its own state so its identity
+  // only changes when membership changes (not on every keystroke), which keeps
+  // the memoized file tree from re-rendering while typing.
+  const [dirtyPaths, setDirtyPaths] = useState<Set<string>>(new Set());
   const originalEtags = useRef<Map<string, string>>(new Map());
 
   const [sourceMode, setSourceMode] = useState(false);
@@ -180,7 +188,7 @@ export function TechDocsEditorPage({
   useEffect(() => {
     if (!selectedPath || !branch) return;
 
-    const edited = editedFiles.get(selectedPath);
+    const edited = editedFilesRef.current.get(selectedPath);
     if (edited) {
       setFileContent(edited.content ?? '');
       return;
@@ -196,7 +204,7 @@ export function TechDocsEditorPage({
       })
       .catch(e => setFileError(e))
       .finally(() => setFileLoading(false));
-  }, [api, requestEntityRef, selectedPath, branch, editedFiles]);
+  }, [api, requestEntityRef, selectedPath, branch]);
 
   const handleContentChange = useCallback(
     (markdown: string) => {
@@ -207,6 +215,9 @@ export function TechDocsEditorPage({
         next.set(selectedPath, { path: selectedPath, content: markdown, etag });
         return next;
       });
+      setDirtyPaths(prev =>
+        prev.has(selectedPath) ? prev : new Set(prev).add(selectedPath),
+      );
     },
     [selectedPath],
   );
@@ -225,6 +236,9 @@ export function TechDocsEditorPage({
       });
       return next;
     });
+    setDirtyPaths(prev =>
+      prev.has(relativePath) ? prev : new Set(prev).add(relativePath),
+    );
     setTreeNodes(prev => {
       const allPaths = collectPaths(prev).concat(relativePath);
       return buildTree(allPaths);
@@ -249,6 +263,7 @@ export function TechDocsEditorPage({
       draft: opts.draft,
     });
     setEditedFiles(new Map());
+    setDirtyPaths(new Set());
     setSubmitOpen(false);
 
     // Handle different response types
@@ -262,8 +277,36 @@ export function TechDocsEditorPage({
     }
   };
 
-  const dirtyPaths = new Set(editedFiles.keys());
   const dirtyCount = dirtyPaths.size;
+
+  // Warn the user before leaving (reload/close) if there are unsaved edits.
+  useEffect(() => {
+    if (dirtyCount === 0) return undefined;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [dirtyCount]);
+
+  // Memoize the sidebar so it does not re-render on every keystroke. Its props
+  // are stable while typing (`dirtyPaths` identity only changes when the set of
+  // edited files changes, not on content edits).
+  const fileTree = useMemo(
+    () => (
+      <TechDocsFileTree
+        nodes={treeNodes}
+        selectedPath={selectedPath}
+        dirtyPaths={dirtyPaths}
+        onSelect={setSelectedPath}
+        onCreateFile={handleCreateFile}
+        branch={branch}
+        docsDir={docsDir}
+      />
+    ),
+    [treeNodes, selectedPath, dirtyPaths, handleCreateFile, branch, docsDir],
+  );
 
   if (!hasTechDocsAnnotation) {
     return <MissingAnnotationEmptyState annotation={TECHDOCS_ANNOTATION} />;
@@ -335,15 +378,7 @@ export function TechDocsEditorPage({
 
           {/* Body: sidebar + editor */}
           <div className={classes.body}>
-            <TechDocsFileTree
-              nodes={treeNodes}
-              selectedPath={selectedPath}
-              dirtyPaths={dirtyPaths}
-              onSelect={setSelectedPath}
-              onCreateFile={handleCreateFile}
-              branch={branch}
-              docsDir={docsDir}
-            />
+            {fileTree}
 
             <div className={classes.editorArea}>
               {fileLoading && (

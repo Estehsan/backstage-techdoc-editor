@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Button,
   Collapse,
@@ -282,7 +282,7 @@ export function TechDocsFileTree({
 }: TechDocsFileTreeProps) {
   const classes = useStyles();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const existingPaths = new Set(collectPaths(nodes));
+  const existingPaths = useMemo(() => new Set(collectPaths(nodes)), [nodes]);
 
   const handleCreate = (path: string) => {
     setDialogOpen(false);
