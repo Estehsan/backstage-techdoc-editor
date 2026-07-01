@@ -59,8 +59,10 @@ export type MkDocsConfig = {
   repo_url?: string;
   edit_uri?: string;
   nav?: MkDocsNavEntry[];
-  /** True when the documentation source is a local filesystem path (dir: annotation). */
-  isLocalSource?: boolean;
+  /** Whether the source supports saving directly to the local filesystem. */
+  canSaveLocally?: boolean;
+  /** Whether the source supports creating a pull request in a VCS provider. */
+  canCreatePullRequest?: boolean;
 };
 
 /** @public */
@@ -86,6 +88,8 @@ export type EditedFile = {
 export type SubmitEditsRequest = {
   files: EditedFile[];
   commitMessage: string;
+  /** Submission action to perform. */
+  action: 'save-locally' | 'create-pull-request';
   /** PR title. Required for VCS submissions, ignored for local saves. */
   prTitle?: string;
   /** PR description. Used only for VCS submissions. */
@@ -116,27 +120,25 @@ export type SubmitEditsResponse = {
 };
 
 /**
- * Resolved source location for a TechDocs entity.
- * Either a VCS URL or a local filesystem path.
+ * Resolved source locations for a TechDocs entity.
  * @public
  */
-export type ResolvedSource =
-  | {
-      type: 'vcs';
-      /** Full repository URL, e.g. https://github.com/org/repo */
-      repoUrl: string;
-      /** Docs directory relative to repo root, e.g. "docs" */
-      docsDir: string | undefined;
-      /** Default branch name, e.g. "main" */
-      defaultBranch: string | undefined;
-    }
-  | {
-      type: 'local';
-      /** Absolute path to the entity root directory on the local filesystem */
-      basePath: string;
-      /** Docs directory relative to basePath, e.g. "docs" */
-      docsDir: string;
-    };
+export type ResolvedSource = {
+  local?: {
+    /** Absolute path to the entity root directory on the local filesystem */
+    basePath: string;
+    /** Docs directory relative to basePath, e.g. "docs" */
+    docsDir: string;
+  };
+  vcs?: {
+    /** Full repository URL, e.g. https://github.com/org/repo */
+    repoUrl: string;
+    /** Docs directory relative to repo root, e.g. "docs" */
+    docsDir?: string;
+    /** Default branch name, e.g. "main" */
+    defaultBranch?: string;
+  };
+};
 
 /**
  * A file conflict detected when the source changed between open and submit.
