@@ -21,7 +21,13 @@ import { UrlReaderService } from '@backstage/backend-plugin-api';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { resolveSource } from './sourceResolver';
+import { VcsProvider } from '@estehsaan/backstage-plugin-techdocs-editor-node';
+import {
+  resolveSource,
+  fetchMkdocsContent,
+  parseMkdocsContent,
+  resolveDocsDirFromMkdocs,
+} from './sourceResolver';
 
 describe('resolveSource', () => {
   const reader = {} as UrlReaderService;
@@ -163,5 +169,154 @@ describe('resolveSource', () => {
       type: 'vcs',
       repoUrl: 'https://github.com/backstage/backstage',
     });
+  });
+});
+
+describe('fetchMkdocsContent / resolveDocsDirFromMkdocs', () => {
+  // Regression coverage for the "fixed for local, broken for GitHub (and vice
+  // versa)" oscillation: every route handler must resolve docsDir from
+  // mkdocs.yml through these two shared functions, for *every* source type,
+  // so the effective docs directory can never drift between `/mkdocs`,
+  // `/tree`, `/file` and `/submissions`, or between local and VCS sources.
+
+  let sourceRoot: string;
+
+  beforeEach(async () => {
+    sourceRoot = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'techdocs-editor-mkdocs-'),
+    );
+  });
+
+  afterEach(async () => {
+    await fs.rm(sourceRoot, { recursive: true, force: true });
+  });
+
+  it('reads mkdocs.yml from the local filesystem for local sources', async () => {
+    await fs.writeFile(
+      path.join(sourceRoot, 'mkdocs.yml'),
+      'site_name: Example\ndocs_dir: documentation\n',
+      'utf-8',
+    );
+
+    const content = await fetchMkdocsContent(
+      { type: 'local', basePath: sourceRoot, docsDir: '.' },
+      undefined,
+      'local',
+    );
+
+    expect(content).toContain('docs_dir: documentation');
+
+    const resolvedDocsDir = resolveDocsDirFromMkdocs(
+      parseMkdocsContent(content),
+      'docs',
+    );
+    expect(resolvedDocsDir).toBe('documentation');
+  });
+
+  it('returns undefined when a local source has no mkdocs.yml', async () => {
+    const content = await fetchMkdocsContent(
+      { type: 'local', basePath: sourceRoot, docsDir: '.' },
+      undefined,
+      'local',
+    );
+    expect(content).toBeUndefined();
+  });
+
+  it('reads mkdocs.yml via the VCS provider for remote sources, honoring docs_dir overrides', async () => {
+    const provider: VcsProvider = {
+      getDefaultBranch: jest.fn(),
+      listFiles: jest.fn(),
+      readFile: jest.fn().mockResolvedValue({
+        content: 'site_name: Example\ndocs_dir: documentation\n',
+        etag: 'abc123',
+      }),
+      openPullRequest: jest.fn(),
+      canHandle: jest.fn(),
+    };
+
+    const content = await fetchMkdocsContent(
+      {
+        type: 'vcs',
+        repoUrl: 'https://github.com/org/repo',
+        docsDir: undefined,
+      },
+      provider,
+      'main',
+    );
+
+    expect(provider.readFile).toHaveBeenCalledWith({
+      repoUrl: 'https://github.com/org/repo',
+      ref: 'main',
+      filePath: 'mkdocs.yml',
+    });
+
+    const resolvedDocsDir = resolveDocsDirFromMkdocs(
+      parseMkdocsContent(content),
+      'docs',
+    );
+    // Previously, `/tree` and `/file` for remote sources ignored mkdocs.yml
+    // entirely and always used 'docs' unless a URL-hash docsDir was present —
+    // meaning a repo with `docs_dir: documentation` in mkdocs.yml returned an
+    // empty file list on GitHub/GitLab even though `/mkdocs` reported the
+    // correct directory. This must now resolve identically everywhere.
+    expect(resolvedDocsDir).toBe('documentation');
+  });
+
+  it('swallows a NotFoundError from the remote provider and falls back to the default docsDir', async () => {
+    const notFound = Object.assign(new Error('missing'), {
+      name: 'NotFoundError',
+    });
+    const provider: VcsProvider = {
+      getDefaultBranch: jest.fn(),
+      listFiles: jest.fn(),
+      readFile: jest.fn().mockRejectedValue(notFound),
+      openPullRequest: jest.fn(),
+      canHandle: jest.fn(),
+    };
+
+    const content = await fetchMkdocsContent(
+      {
+        type: 'vcs',
+        repoUrl: 'https://github.com/org/repo',
+        docsDir: undefined,
+      },
+      provider,
+      'main',
+    );
+    expect(content).toBeUndefined();
+
+    const resolvedDocsDir = resolveDocsDirFromMkdocs(
+      parseMkdocsContent(content),
+      'docs',
+    );
+    expect(resolvedDocsDir).toBe('docs');
+  });
+
+  it('rethrows non-NotFoundError errors from the remote provider instead of silently falling back', async () => {
+    const provider: VcsProvider = {
+      getDefaultBranch: jest.fn(),
+      listFiles: jest.fn(),
+      readFile: jest.fn().mockRejectedValue(new Error('network timeout')),
+      openPullRequest: jest.fn(),
+      canHandle: jest.fn(),
+    };
+
+    await expect(
+      fetchMkdocsContent(
+        {
+          type: 'vcs',
+          repoUrl: 'https://github.com/org/repo',
+          docsDir: undefined,
+        },
+        provider,
+        'main',
+      ),
+    ).rejects.toThrow('network timeout');
+  });
+
+  it('rejects an unsafe docs_dir override to prevent path traversal via a malicious mkdocs.yml', () => {
+    expect(() =>
+      resolveDocsDirFromMkdocs({ docs_dir: '../../etc' }, 'docs'),
+    ).toThrow(/must not escape the repository root/);
   });
 });

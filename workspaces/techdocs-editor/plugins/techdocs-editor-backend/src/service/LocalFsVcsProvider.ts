@@ -175,8 +175,11 @@ export class LocalFsVcsProvider implements VcsProvider {
   ): Promise<void> {
     const entries = await fs.readdir(dirPath, { withFileTypes: true });
     for (const entry of entries) {
-      // Skip hidden files/directories
-      if (entry.name.startsWith('.')) {
+      // Skip hidden files/directories and dependency/build trees that should
+      // never be treated as documentation content (e.g. node_modules can
+      // contain scoped-package folders like `@apidevtools` with their own
+      // markdown files, which are not part of the docs source).
+      if (entry.name.startsWith('.') || entry.name === 'node_modules') {
         continue;
       }
 

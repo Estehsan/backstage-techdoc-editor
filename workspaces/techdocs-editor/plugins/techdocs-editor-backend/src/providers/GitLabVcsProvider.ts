@@ -121,7 +121,9 @@ export class GitLabVcsProvider implements VcsProvider {
     });
 
     return items
-      .filter(item => item.type === 'blob')
+      .filter(
+        item => item.type === 'blob' && !/(^|\/)node_modules\//.test(item.path),
+      )
       .map(item => {
         const prefix = opts.dirPath.endsWith('/')
           ? opts.dirPath
