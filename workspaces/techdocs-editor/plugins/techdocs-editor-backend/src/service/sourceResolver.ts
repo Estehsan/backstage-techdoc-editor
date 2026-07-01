@@ -22,6 +22,7 @@ import { UrlReaderService } from '@backstage/backend-plugin-api';
 import { parseReferenceAnnotation } from '@backstage/plugin-techdocs-node';
 import { TECHDOCS_ANNOTATION } from '@backstage/plugin-techdocs-common';
 import { ResolvedSource } from '@estehsaan/backstage-plugin-techdocs-editor-common';
+import { VcsProvider } from '@estehsaan/backstage-plugin-techdocs-editor-node';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import yaml from 'js-yaml';
@@ -319,4 +320,92 @@ export async function resolveSource(
   }
 
   return { type: 'vcs', repoUrl, docsDir, defaultBranch };
+}
+
+/**
+ * Fetch the raw `mkdocs.yml` content for a resolved source, using the local
+ * filesystem for `local` sources and the VCS provider's `readFile` for `vcs`
+ * sources. Returns `undefined` when no `mkdocs.yml` exists.
+ *
+ * This is the single place that knows how to read `mkdocs.yml` regardless of
+ * source type — every route handler (`/mkdocs`, `/tree`, `/file`,
+ * `/submissions`) must go through this (and {@link resolveDocsDirFromMkdocs})
+ * so the effective docs directory can never drift between endpoints or
+ * between local and remote sources.
+ *
+ * @internal
+ */
+export async function fetchMkdocsContent(
+  source: ResolvedSource,
+  remoteProvider: VcsProvider | undefined,
+  branch: string,
+): Promise<string | undefined> {
+  if (source.type === 'local') {
+    try {
+      return await fs.readFile(
+        path.join(source.basePath, 'mkdocs.yml'),
+        'utf-8',
+      );
+    } catch {
+      return undefined;
+    }
+  }
+
+  if (!remoteProvider) {
+    return undefined;
+  }
+
+  try {
+    const result = await remoteProvider.readFile({
+      repoUrl: source.repoUrl,
+      ref: branch,
+      filePath: 'mkdocs.yml',
+    });
+    return result.content;
+  } catch (err: unknown) {
+    // Only ignore a missing mkdocs.yml — rethrow network, auth, or other errors.
+    if (
+      !err ||
+      typeof err !== 'object' ||
+      (err as { name?: string }).name !== 'NotFoundError'
+    ) {
+      throw err;
+    }
+    return undefined;
+  }
+}
+
+/**
+ * Parse `mkdocs.yml` content into a plain object. Returns `{}` when there is
+ * no content (missing file) or the content fails to parse as a mapping.
+ *
+ * @internal
+ */
+export function parseMkdocsContent(
+  mkdocsContent: string | undefined,
+): Record<string, unknown> {
+  if (!mkdocsContent) {
+    return {};
+  }
+  return (yaml.load(mkdocsContent) as Record<string, unknown>) ?? {};
+}
+
+/**
+ * Resolve the effective docs directory from parsed `mkdocs.yml` content,
+ * falling back to `fallback` (the source's pre-resolved `docsDir`) when
+ * `mkdocs.yml` has no `docs_dir` key. Validates any `docs_dir` override via
+ * {@link assertSafeDocsDir} before it is used to build file paths.
+ *
+ * @internal
+ */
+export function resolveDocsDirFromMkdocs(
+  parsedMkdocs: Record<string, unknown>,
+  fallback: string,
+): string {
+  const docsDir = parsedMkdocs.docs_dir;
+  if (typeof docsDir === 'string' && docsDir.length > 0) {
+    assertSafeDocsDir(docsDir);
+    return docsDir;
+  }
+  return fallback;
 }
