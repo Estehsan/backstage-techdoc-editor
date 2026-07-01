@@ -16,6 +16,7 @@
 
 import { Entity } from '@backstage/catalog-model';
 import { ConfigReader } from '@backstage/config';
+import { InputError } from '@backstage/errors';
 import { ScmIntegrations } from '@backstage/integration';
 import { UrlReaderService } from '@backstage/backend-plugin-api';
 import { promises as fs } from 'node:fs';
@@ -84,9 +85,10 @@ describe('resolveSource', () => {
     );
 
     expect(result).toEqual({
-      type: 'local',
-      basePath: sourceRoot,
-      docsDir: 'documentation',
+      local: {
+        basePath: sourceRoot,
+        docsDir: 'documentation',
+      },
     });
   });
 
@@ -101,9 +103,10 @@ describe('resolveSource', () => {
     );
 
     expect(result).toEqual({
-      type: 'local',
-      basePath: sourceRoot,
-      docsDir: 'docs',
+      local: {
+        basePath: sourceRoot,
+        docsDir: 'docs',
+      },
     });
   });
 
@@ -122,9 +125,10 @@ describe('resolveSource', () => {
     );
 
     expect(result).toEqual({
-      type: 'local',
-      basePath: docsPath,
-      docsDir: '.',
+      local: {
+        basePath: docsPath,
+        docsDir: '.',
+      },
     });
   });
 
@@ -137,9 +141,10 @@ describe('resolveSource', () => {
     );
 
     expect(result).toEqual({
-      type: 'local',
-      basePath: sourceRoot,
-      docsDir: '.',
+      local: {
+        basePath: sourceRoot,
+        docsDir: '.',
+      },
     });
   });
 
@@ -165,9 +170,118 @@ describe('resolveSource', () => {
 
     const result = await resolveSource(entity, scmIntegrations, reader, config);
 
-    expect(result).toMatchObject({
-      type: 'vcs',
-      repoUrl: 'https://github.com/backstage/backstage',
+    expect(result).toEqual({
+      vcs: {
+        repoUrl: 'https://github.com/backstage/backstage',
+        docsDir: undefined,
+        defaultBranch: 'master',
+      },
+    });
+  });
+
+  describe('resolveSource additive behavior', () => {
+    it('populates both local and vcs when dir: annotation and a resolvable project-slug are both present', async () => {
+      await fs.mkdir(path.join(sourceRoot, 'docs'));
+
+      const entity: Entity = {
+        apiVersion: 'backstage.io/v1alpha1',
+        kind: 'Component',
+        metadata: {
+          name: 'test',
+          annotations: {
+            'backstage.io/techdocs-ref': 'dir:.',
+            'backstage.io/source-location': `url:file://${sourceRoot}`,
+            'github.com/project-slug': 'org/repo',
+          },
+        },
+        spec: { type: 'service', lifecycle: 'experimental', owner: 'guest' },
+      };
+
+      const result = await resolveSource(entity, scmIntegrations, reader, config);
+
+      expect(result.local).toEqual({
+        basePath: expect.any(String),
+        docsDir: expect.any(String),
+      });
+      expect(result.vcs).toEqual({
+        repoUrl: expect.stringContaining('github.com/org/repo'),
+        docsDir: undefined,
+        defaultBranch: undefined,
+      });
+    });
+
+    it('populates only local when dir: annotation present with no resolvable slug', async () => {
+      await fs.mkdir(path.join(sourceRoot, 'docs'));
+
+      const entity = dirEntity('.');
+
+      const result = await resolveSource(entity, scmIntegrations, reader, config);
+
+      expect(result.local).toEqual({
+        basePath: expect.any(String),
+        docsDir: expect.any(String),
+      });
+      expect(result.vcs).toBeUndefined();
+    });
+
+    it('populates only vcs when url: annotation is present', async () => {
+      const entity: Entity = {
+        apiVersion: 'backstage.io/v1alpha1',
+        kind: 'Component',
+        metadata: {
+          name: 'test',
+          annotations: {
+            'backstage.io/techdocs-ref':
+              'url:https://github.com/org/repo/tree/main/docs#docs',
+          },
+        },
+        spec: { type: 'service', lifecycle: 'experimental', owner: 'guest' },
+      };
+
+      const result = await resolveSource(entity, scmIntegrations, reader, config);
+
+      expect(result.local).toBeUndefined();
+      expect(result.vcs).toEqual({
+        repoUrl: expect.stringContaining('github.com/org/repo'),
+        docsDir: 'docs',
+        defaultBranch: 'main',
+      });
+    });
+
+    it('populates only vcs when no techdocs-ref annotation but a resolvable slug annotation exists', async () => {
+      const entity: Entity = {
+        apiVersion: 'backstage.io/v1alpha1',
+        kind: 'Component',
+        metadata: {
+          name: 'test',
+          annotations: {
+            'github.com/project-slug': 'org/repo',
+          },
+        },
+        spec: { type: 'service', lifecycle: 'experimental', owner: 'guest' },
+      };
+
+      const result = await resolveSource(entity, scmIntegrations, reader, config);
+
+      expect(result.local).toBeUndefined();
+      expect(result.vcs).toEqual({
+        repoUrl: expect.stringContaining('github.com/org/repo'),
+        docsDir: undefined,
+        defaultBranch: undefined,
+      });
+    });
+
+    it('throws InputError when neither dir:, url:, nor a resolvable slug is present', async () => {
+      const entity: Entity = {
+        apiVersion: 'backstage.io/v1alpha1',
+        kind: 'Component',
+        metadata: { name: 'test', annotations: {} },
+        spec: { type: 'service', lifecycle: 'experimental', owner: 'guest' },
+      };
+
+      await expect(
+        resolveSource(entity, scmIntegrations, reader, config),
+      ).rejects.toThrow(InputError);
     });
   });
 });
@@ -199,7 +313,7 @@ describe('fetchMkdocsContent / resolveDocsDirFromMkdocs', () => {
     );
 
     const content = await fetchMkdocsContent(
-      { type: 'local', basePath: sourceRoot, docsDir: '.' },
+      { local: { basePath: sourceRoot, docsDir: '.' } },
       undefined,
       'local',
     );
@@ -215,7 +329,7 @@ describe('fetchMkdocsContent / resolveDocsDirFromMkdocs', () => {
 
   it('returns undefined when a local source has no mkdocs.yml', async () => {
     const content = await fetchMkdocsContent(
-      { type: 'local', basePath: sourceRoot, docsDir: '.' },
+      { local: { basePath: sourceRoot, docsDir: '.' } },
       undefined,
       'local',
     );
@@ -236,9 +350,10 @@ describe('fetchMkdocsContent / resolveDocsDirFromMkdocs', () => {
 
     const content = await fetchMkdocsContent(
       {
-        type: 'vcs',
-        repoUrl: 'https://github.com/org/repo',
-        docsDir: undefined,
+        vcs: {
+          repoUrl: 'https://github.com/org/repo',
+          docsDir: undefined,
+        },
       },
       provider,
       'main',
@@ -276,9 +391,10 @@ describe('fetchMkdocsContent / resolveDocsDirFromMkdocs', () => {
 
     const content = await fetchMkdocsContent(
       {
-        type: 'vcs',
-        repoUrl: 'https://github.com/org/repo',
-        docsDir: undefined,
+        vcs: {
+          repoUrl: 'https://github.com/org/repo',
+          docsDir: undefined,
+        },
       },
       provider,
       'main',
@@ -304,9 +420,10 @@ describe('fetchMkdocsContent / resolveDocsDirFromMkdocs', () => {
     await expect(
       fetchMkdocsContent(
         {
-          type: 'vcs',
-          repoUrl: 'https://github.com/org/repo',
-          docsDir: undefined,
+          vcs: {
+            repoUrl: 'https://github.com/org/repo',
+            docsDir: undefined,
+          },
         },
         provider,
         'main',
