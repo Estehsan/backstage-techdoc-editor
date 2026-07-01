@@ -151,9 +151,8 @@ export function TechDocsEditorPage({
   const [sourceMode, setSourceMode] = useState(false);
   const [submitOpen, setSubmitOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  // Detect local source by checking if branch === 'local'
-  const isLocalSource = branch === 'local';
+  const [canSaveLocally, setCanSaveLocally] = useState(false);
+  const [canCreatePullRequest, setCanCreatePullRequest] = useState(false);
 
   const requestEntityRef = useMemo(
     () => ({
@@ -173,6 +172,8 @@ export function TechDocsEditorPage({
       .then(([tree, config]) => {
         setBranch(tree.branch);
         setDocsDir(tree.docsDir);
+        setCanSaveLocally(tree.canSaveLocally);
+        setCanCreatePullRequest(tree.canCreatePullRequest);
         setMkdocsConfig(config);
         const nodes: DocTreeNode[] = buildTree(
           tree.nodes.map(n => n.path!).filter(Boolean),
@@ -248,6 +249,7 @@ export function TechDocsEditorPage({
   }, []);
 
   const handleSubmit = async (opts: {
+    action: 'save-locally' | 'create-pull-request';
     prTitle: string;
     prDescription: string;
     commitMessage: string;
@@ -256,8 +258,8 @@ export function TechDocsEditorPage({
     const files: EditedFile[] = Array.from(editedFiles.values());
     const result = await api.submitEdits(entityRef, {
       files,
-      // Only include prTitle for VCS sources
-      prTitle: isLocalSource ? undefined : opts.prTitle,
+      action: opts.action,
+      prTitle: opts.action === 'create-pull-request' ? opts.prTitle : undefined,
       prDescription: opts.prDescription,
       commitMessage: opts.commitMessage,
       draft: opts.draft,
@@ -412,7 +414,8 @@ export function TechDocsEditorPage({
           defaultPrTitle={`docs: update ${
             mkdocsConfig?.site_name ?? entityRef.name
           } documentation`}
-          isLocalSource={isLocalSource}
+          canSaveLocally={canSaveLocally}
+          canCreatePullRequest={canCreatePullRequest}
         />
 
         {/* Success notification for local saves */}

@@ -46,30 +46,31 @@ export type MkDocsConfig = {
   repo_url?: string;
   edit_uri?: string;
   nav?: MkDocsNavEntry[];
-  isLocalSource?: boolean;
+  canSaveLocally?: boolean;
+  canCreatePullRequest?: boolean;
 };
 
 // @public (undocumented)
 export type MkDocsNavEntry = string | Record<string, string | MkDocsNavEntry[]>;
 
 // @public
-export type ResolvedSource =
-  | {
-      type: 'vcs';
-      repoUrl: string;
-      docsDir: string | undefined;
-      defaultBranch: string | undefined;
-    }
-  | {
-      type: 'local';
-      basePath: string;
-      docsDir: string;
-    };
+export type ResolvedSource = {
+  local?: {
+    basePath: string;
+    docsDir: string;
+  };
+  vcs?: {
+    repoUrl: string;
+    docsDir?: string;
+    defaultBranch?: string;
+  };
+};
 
 // @public
 export type SubmitEditsRequest = {
   files: EditedFile[];
   commitMessage: string;
+  action: 'save-locally' | 'create-pull-request';
   prTitle?: string;
   prDescription?: string;
   draft?: boolean;

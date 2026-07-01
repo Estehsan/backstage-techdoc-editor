@@ -34,9 +34,14 @@ import {
  */
 export interface TechDocsEditorApi {
   getMkDocsConfig(entityRef: CompoundEntityRef): Promise<MkDocsConfig>;
-  getFileTree(
-    entityRef: CompoundEntityRef,
-  ): Promise<DocTree & { branch: string; docsDir?: string }>;
+  getFileTree(entityRef: CompoundEntityRef): Promise<
+    DocTree & {
+      branch: string;
+      docsDir?: string;
+      canSaveLocally: boolean;
+      canCreatePullRequest: boolean;
+    }
+  >;
   getFile(
     entityRef: CompoundEntityRef,
     path: string,
@@ -89,9 +94,14 @@ export class TechDocsEditorClient implements TechDocsEditorApi {
     return res.json();
   }
 
-  async getFileTree(
-    entityRef: CompoundEntityRef,
-  ): Promise<DocTree & { branch: string; docsDir?: string }> {
+  async getFileTree(entityRef: CompoundEntityRef): Promise<
+    DocTree & {
+      branch: string;
+      docsDir?: string;
+      canSaveLocally: boolean;
+      canCreatePullRequest: boolean;
+    }
+  > {
     const base = await this.baseUrl();
     const res = await this.fetchApi.fetch(
       `${base}/sources/${this.entityPath(entityRef)}/tree`,
@@ -110,6 +120,8 @@ export class TechDocsEditorClient implements TechDocsEditorApi {
       sourceEtag: '',
       branch: data.branch,
       docsDir: data.docsDir,
+      canSaveLocally: data.canSaveLocally,
+      canCreatePullRequest: data.canCreatePullRequest,
     };
   }
 
