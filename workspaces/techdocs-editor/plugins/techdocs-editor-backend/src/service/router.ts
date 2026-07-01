@@ -390,6 +390,14 @@ export async function createRouter(
       if (!body.commitMessage) {
         throw new InputError('commitMessage is required');
       }
+      if (
+        body.action !== 'save-locally' &&
+        body.action !== 'create-pull-request'
+      ) {
+        throw new InputError(
+          'action must be either "save-locally" or "create-pull-request"',
+        );
+      }
       // Validate every file path before touching any VCS provider
       for (const file of body.files) {
         if (!file.path) {
@@ -413,24 +421,36 @@ export async function createRouter(
         config,
       );
 
-      // Determine repoUrl and resolvedDocsDir based on source type
+      if (body.action === 'save-locally' && !source.local) {
+        throw new InputError(
+          'This entity has no local filesystem source — Save Locally is unavailable.',
+        );
+      }
+
+      if (body.action === 'create-pull-request' && !source.vcs) {
+        throw new InputError(
+          'This entity has no configured VCS repository — Create Pull Request is unavailable.',
+        );
+      }
+
+      // Determine repoUrl and resolvedDocsDir based on requested action
       let repoUrl: string;
       let resolvedDocsDir: string;
 
-      if (source.type === 'local') {
-        repoUrl = `file://${source.basePath}`;
-        resolvedDocsDir = source.docsDir;
+      if (body.action === 'save-locally') {
+        repoUrl = `file://${source.local!.basePath}`;
+        resolvedDocsDir = source.local!.docsDir;
       } else {
         // VCS source — require prTitle
         if (!body.prTitle) {
           throw new InputError('prTitle is required for VCS submissions');
         }
-        repoUrl = source.repoUrl;
-        resolvedDocsDir = source.docsDir ?? 'docs';
+        repoUrl = source.vcs!.repoUrl;
+        resolvedDocsDir = source.vcs!.docsDir ?? 'docs';
       }
 
       const provider: VcsProvider =
-        source.type === 'local'
+        body.action === 'save-locally'
           ? new LocalFsVcsProvider()
           : (() => {
               const p = providerRegistry.getForUrl(repoUrl);
@@ -440,7 +460,9 @@ export async function createRouter(
 
       const baseBranch =
         body.baseBranch ??
-        (source.type === 'vcs' ? source.defaultBranch : undefined) ??
+        (body.action === 'create-pull-request'
+          ? source.vcs!.defaultBranch
+          : undefined) ??
         (await provider.getDefaultBranch(repoUrl));
 
       // Resolve the effective docs directory from mkdocs.yml the same way for
@@ -448,7 +470,7 @@ export async function createRouter(
       // to a different docsDir than what `/tree` and `/file` last showed.
       const mkdocsContent = await fetchMkdocsContent(
         source,
-        source.type === 'vcs' ? provider : undefined,
+        body.action === 'create-pull-request' ? provider : undefined,
         baseBranch,
       );
       resolvedDocsDir = resolveDocsDirFromMkdocs(
@@ -518,8 +540,8 @@ export async function createRouter(
       });
 
       // Handle local save vs VCS PR differently
-      if (source.type === 'local') {
-        const savedPath = path.join(source.basePath, resolvedDocsDir);
+      if (body.action === 'save-locally') {
+        const savedPath = path.join(source.local!.basePath, resolvedDocsDir);
         logger.info(
           `TechDocs editor: saved ${
             body.files.length
