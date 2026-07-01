@@ -1,3 +1,11 @@
+## [1.2.4](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.2.3...techdocs-editor-v1.2.4) (2026-07-01)
+
+
+### Bug Fixes
+
+* **techdocs-editor-backend:** centralize docsDir resolution across local and VCS sources ([ab41d00](https://github.com/Estehsan/backstage-techdoc-editor/commit/ab41d000345da88e074a3b7584e84314fb3b7c46))
+* **techdocs-editor-backend:** exclude node_modules from doc file listings ([3ef3d1d](https://github.com/Estehsan/backstage-techdoc-editor/commit/3ef3d1d26f863bdbcbac95189fd26b3f369c290c))
+
 ## [1.2.3](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.2.2...techdocs-editor-v1.2.3) (2026-06-30)
 
 

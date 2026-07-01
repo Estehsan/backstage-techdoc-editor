@@ -1,6 +1,6 @@
 {
   "name": "@estehsaan/backstage-plugin-techdocs-editor-common",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Shared types, contracts, and permission definitions for the TechDocs editor plugin",
   "backstage": {
     "role": "common-library",
