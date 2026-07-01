@@ -197,7 +197,12 @@ describe('resolveSource', () => {
         spec: { type: 'service', lifecycle: 'experimental', owner: 'guest' },
       };
 
-      const result = await resolveSource(entity, scmIntegrations, reader, config);
+      const result = await resolveSource(
+        entity,
+        scmIntegrations,
+        reader,
+        config,
+      );
 
       expect(result.local).toEqual({
         basePath: expect.any(String),
@@ -215,7 +220,12 @@ describe('resolveSource', () => {
 
       const entity = dirEntity('.');
 
-      const result = await resolveSource(entity, scmIntegrations, reader, config);
+      const result = await resolveSource(
+        entity,
+        scmIntegrations,
+        reader,
+        config,
+      );
 
       expect(result.local).toEqual({
         basePath: expect.any(String),
@@ -238,7 +248,12 @@ describe('resolveSource', () => {
         spec: { type: 'service', lifecycle: 'experimental', owner: 'guest' },
       };
 
-      const result = await resolveSource(entity, scmIntegrations, reader, config);
+      const result = await resolveSource(
+        entity,
+        scmIntegrations,
+        reader,
+        config,
+      );
 
       expect(result.local).toBeUndefined();
       expect(result.vcs).toEqual({
@@ -261,7 +276,12 @@ describe('resolveSource', () => {
         spec: { type: 'service', lifecycle: 'experimental', owner: 'guest' },
       };
 
-      const result = await resolveSource(entity, scmIntegrations, reader, config);
+      const result = await resolveSource(
+        entity,
+        scmIntegrations,
+        reader,
+        config,
+      );
 
       expect(result.local).toBeUndefined();
       expect(result.vcs).toEqual({

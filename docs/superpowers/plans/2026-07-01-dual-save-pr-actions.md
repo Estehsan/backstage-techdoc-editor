@@ -4,7 +4,7 @@
 
 **Goal:** Give every TechDocs entity both a "Save Locally" and a "Create Pull Request" action (each shown only when actually possible), replacing the current single-mode (local-only OR PR-only) behavior.
 
-**Architecture:** `resolveSource()` in the backend now returns an *additive* `ResolvedSource` shape (`{ local?, vcs? }` — both can be populated simultaneously for a `dir:` entity that also has a `github.com/project-slug`/`gitlab.com/project-slug` annotation). The router exposes two capability booleans (`canSaveLocally`, `canCreatePullRequest`) on `GET /mkdocs` and `GET /tree`, and branches `POST /submissions` on a new required `action: 'save-locally' | 'create-pull-request'` field, guarding each branch with a 400 `InputError` if the corresponding capability is absent. The frontend dialog renders 0–2 buttons based on the two flags and calls `onSubmit` with the matching `action`.
+**Architecture:** `resolveSource()` in the backend now returns an _additive_ `ResolvedSource` shape (`{ local?, vcs? }` — both can be populated simultaneously for a `dir:` entity that also has a `github.com/project-slug`/`gitlab.com/project-slug` annotation). The router exposes two capability booleans (`canSaveLocally`, `canCreatePullRequest`) on `GET /mkdocs` and `GET /tree`, and branches `POST /submissions` on a new required `action: 'save-locally' | 'create-pull-request'` field, guarding each branch with a 400 `InputError` if the corresponding capability is absent. The frontend dialog renders 0–2 buttons based on the two flags and calls `onSubmit` with the matching `action`.
 
 **Tech Stack:** TypeScript, Express, Backstage backend/frontend plugin conventions, Jest + supertest (backend), Jest + @testing-library/react (frontend).
 
@@ -12,7 +12,7 @@
 
 ## Reference
 
-Full design rationale: `docs/superpowers/specs/2026-07-01-dual-save-pr-actions-design.md`. Read it before starting if anything below is ambiguous — it is the source of truth for *why*, this plan is the source of truth for *how*.
+Full design rationale: `docs/superpowers/specs/2026-07-01-dual-save-pr-actions-design.md`. Read it before starting if anything below is ambiguous — it is the source of truth for _why_, this plan is the source of truth for _how_.
 
 All file paths below are relative to the submodule root: `/Users/estehsan/Documents/Coders/SAS/Back/backstage/plugins/backstage-plugin-techdocs-editor/`.
 
@@ -25,6 +25,7 @@ Run root-level checks (`tsc`, `prettier`, `lint`, full `test`) from the submodul
 ### Task 1: Shared types (`techdocs-editor-common`)
 
 **Files:**
+
 - Modify: `workspaces/techdocs-editor/plugins/techdocs-editor-common/src/types.ts`
 
 Current relevant sections (for reference, do not copy blindly — re-view the file first since line numbers may have drifted):
@@ -113,7 +114,7 @@ Keep any other existing fields already in that type (re-view file to confirm not
 - [ ] **Step 5: Run type check for this package**
 
 Run: `yarn tsc` (from submodule root)
-Expected: New errors will appear in `sourceResolver.ts`, `router.ts`, `api.ts`, `SubmitEditsDialog.tsx`, `TechDocsEditorPage.tsx` — this is expected, they get fixed in later tasks. Confirm no errors are reported *inside* `techdocs-editor-common` itself.
+Expected: New errors will appear in `sourceResolver.ts`, `router.ts`, `api.ts`, `SubmitEditsDialog.tsx`, `TechDocsEditorPage.tsx` — this is expected, they get fixed in later tasks. Confirm no errors are reported _inside_ `techdocs-editor-common` itself.
 
 - [ ] **Step 6: Commit**
 
@@ -127,6 +128,7 @@ git commit -m "feat(common): additive ResolvedSource + action-based SubmitEditsR
 ### Task 2: `sourceResolver.ts` rewrite (TDD)
 
 **Files:**
+
 - Modify: `workspaces/techdocs-editor/plugins/techdocs-editor-backend/src/service/sourceResolver.ts:216-323` (`resolveSource`), `:338-376` (`fetchMkdocsContent`)
 - Modify: `workspaces/techdocs-editor/plugins/techdocs-editor-backend/src/service/sourceResolver.test.ts` (full rewrite of assertions)
 
@@ -227,7 +229,8 @@ describe('resolveSource additive behavior', () => {
       metadata: {
         name: 'test',
         annotations: {
-          'backstage.io/techdocs-ref': 'url:https://github.com/org/repo/tree/main/docs',
+          'backstage.io/techdocs-ref':
+            'url:https://github.com/org/repo/tree/main/docs',
         },
       },
     } as Entity;
@@ -284,6 +287,7 @@ Expected: FAIL — `result.local` / `result.vcs` undefined because `resolveSourc
 - [ ] **Step 3: Rewrite `resolveSource()`**
 
 Re-view current implementation (L216-323) fully first. Restructure the function body so that:
+
 1. If the `dir:` branch is taken (today's `type === 'local'` case): build `local: { basePath, docsDir }` using the exact same `resolveLocalBasePath`/`resolveLocalDocsDir`/`assertSafeLocalPath`/`assertSafeDocsDir` calls as today. Then, in addition (do not `return` yet), attempt `resolveFromSlug(entity, config)` (same helper used in the slug-fallback branch). If it returns a value, merge it into `vcs: { repoUrl, docsDir: undefined, defaultBranch: undefined }`. If it throws or returns undefined (whatever the helper's "not found" contract is — check its signature), leave `vcs` undefined. Return `{ local, vcs }` (vcs may be undefined).
 2. If the `url:` branch is taken (today's explicit VCS URL parsing case): keep the exact same parsing logic, but return `{ vcs: { repoUrl, docsDir, defaultBranch } }` (no `local` key at all, not even `undefined` — though `toEqual` will treat `{vcs: X}` and `{local: undefined, vcs: X}` the same, prefer omitting the key for clarity).
 3. If no `techdocs-ref` annotation exists, keep the existing slug-fallback branch, returning `{ vcs: { repoUrl, docsDir: undefined, defaultBranch: undefined } }`.
@@ -312,6 +316,7 @@ git commit -m "feat(backend): resolveSource returns additive local+vcs shape"
 ### Task 3: `router.ts` GET endpoints (local-preferred reads + capability booleans)
 
 **Files:**
+
 - Modify: `workspaces/techdocs-editor/plugins/techdocs-editor-backend/src/service/router.ts:169-225` (`/mkdocs`), `:228-298` (`/tree`), `:301-373` (`/file`)
 
 Re-view the current full content of all three handlers before editing — do not assume the line ranges above are still exact after Task 2's changes shift nothing in this file yet, but re-check.
@@ -358,6 +363,7 @@ git commit -m "feat(backend): GET endpoints expose canSaveLocally/canCreatePullR
 ### Task 4: `router.ts` POST `/submissions` — action-based branching
 
 **Files:**
+
 - Modify: `workspaces/techdocs-editor/plugins/techdocs-editor-backend/src/service/router.ts:376-545`
 
 Re-view this handler's current full content before editing (it is the longest and most behaviorally complex handler).
@@ -418,7 +424,7 @@ if (!req.body.prTitle) {
 // in place of the old source.repoUrl / source.docsDir / source.defaultBranch
 ```
 
-Important: do not invent field names for `LocalFsVcsProvider.openPullRequest()`'s argument object — re-view `LocalFsVcsProvider.ts:109-136` and the current call site in `router.ts` before writing this step's final code, and use the exact existing signature. The plan's job here is to move *which branch calls it*, not to change the call itself.
+Important: do not invent field names for `LocalFsVcsProvider.openPullRequest()`'s argument object — re-view `LocalFsVcsProvider.ts:109-136` and the current call site in `router.ts` before writing this step's final code, and use the exact existing signature. The plan's job here is to move _which branch calls it_, not to change the call itself.
 
 - [ ] **Step 3: Run type check**
 
@@ -437,11 +443,13 @@ git commit -m "feat(backend): POST /submissions branches on action with capabili
 ### Task 5: New `router.test.ts` (backend integration tests)
 
 **Files:**
+
 - Create: `workspaces/techdocs-editor/plugins/techdocs-editor-backend/src/service/router.test.ts`
 
 Use `/tmp/router.test.ts.orig` (fetched from `backstage/community-plugins#8775`, commit `68392fef2e24df2a3b05ae9e4eee362fcf35a1ca`) as the structural scaffold: `supertest` + `express` + `mockServices` from `@backstage/backend-test-utils` + `ConfigReader` + `AuthorizeResult`, plus a `backstageErrorHandler()` middleware and `buildApp()`/`buildRegistry()` fixtures. Re-view that file's full contents before starting (already reviewed in reconnaissance — 351 lines).
 
 Required import-path adaptations from the original scaffold (this repo uses different package scope):
+
 - `@backstage-community/plugin-techdocs-editor-node` → `@estehsaan/backstage-plugin-techdocs-editor-node`
 - Any other `@backstage-community/plugin-techdocs-editor*` imports → `@estehsaan/backstage-plugin-techdocs-editor*` equivalents (check each import in the original scaffold against this repo's actual package names in `techdocs-editor-common`, `techdocs-editor-backend`, `techdocs-editor-node`).
 
@@ -454,12 +462,16 @@ Adapt from `/tmp/router.test.ts.orig`: `buildApp()` helper wiring an express app
 ```ts
 describe('GET /mkdocs', () => {
   it('returns canSaveLocally=true and canCreatePullRequest=true for a dir: entity with a resolvable slug', async () => {
-    const app = buildApp({ entityAnnotations: {
-      'backstage.io/techdocs-ref': 'dir:.',
-      'github.com/project-slug': 'org/repo',
-    }});
+    const app = buildApp({
+      entityAnnotations: {
+        'backstage.io/techdocs-ref': 'dir:.',
+        'github.com/project-slug': 'org/repo',
+      },
+    });
 
-    const response = await request(app).get('/mkdocs?entityRef=component:default/test');
+    const response = await request(app).get(
+      '/mkdocs?entityRef=component:default/test',
+    );
 
     expect(response.status).toBe(200);
     expect(response.body.canSaveLocally).toBe(true);
@@ -467,11 +479,15 @@ describe('GET /mkdocs', () => {
   });
 
   it('returns canSaveLocally=true and canCreatePullRequest=false for a dir: entity with no resolvable slug', async () => {
-    const app = buildApp({ entityAnnotations: {
-      'backstage.io/techdocs-ref': 'dir:.',
-    }});
+    const app = buildApp({
+      entityAnnotations: {
+        'backstage.io/techdocs-ref': 'dir:.',
+      },
+    });
 
-    const response = await request(app).get('/mkdocs?entityRef=component:default/test');
+    const response = await request(app).get(
+      '/mkdocs?entityRef=component:default/test',
+    );
 
     expect(response.status).toBe(200);
     expect(response.body.canSaveLocally).toBe(true);
@@ -479,11 +495,16 @@ describe('GET /mkdocs', () => {
   });
 
   it('returns canSaveLocally=false and canCreatePullRequest=true for a url: entity', async () => {
-    const app = buildApp({ entityAnnotations: {
-      'backstage.io/techdocs-ref': 'url:https://github.com/org/repo/tree/main/docs',
-    }});
+    const app = buildApp({
+      entityAnnotations: {
+        'backstage.io/techdocs-ref':
+          'url:https://github.com/org/repo/tree/main/docs',
+      },
+    });
 
-    const response = await request(app).get('/mkdocs?entityRef=component:default/test');
+    const response = await request(app).get(
+      '/mkdocs?entityRef=component:default/test',
+    );
 
     expect(response.status).toBe(200);
     expect(response.body.canSaveLocally).toBe(false);
@@ -497,7 +518,9 @@ describe('GET /mkdocs', () => {
 ```ts
 describe('POST /submissions', () => {
   it('returns 200 with savedLocally=true when action=save-locally and source has local', async () => {
-    const app = buildApp({ entityAnnotations: { 'backstage.io/techdocs-ref': 'dir:.' } });
+    const app = buildApp({
+      entityAnnotations: { 'backstage.io/techdocs-ref': 'dir:.' },
+    });
 
     const response = await request(app)
       .post('/submissions')
@@ -513,7 +536,9 @@ describe('POST /submissions', () => {
   });
 
   it('returns 400 when action=create-pull-request and source has no vcs', async () => {
-    const app = buildApp({ entityAnnotations: { 'backstage.io/techdocs-ref': 'dir:.' } });
+    const app = buildApp({
+      entityAnnotations: { 'backstage.io/techdocs-ref': 'dir:.' },
+    });
 
     const response = await request(app)
       .post('/submissions')
@@ -529,10 +554,12 @@ describe('POST /submissions', () => {
   });
 
   it('returns 200 with pullRequestUrl when action=create-pull-request and source has vcs', async () => {
-    const app = buildApp({ entityAnnotations: {
-      'backstage.io/techdocs-ref': 'dir:.',
-      'github.com/project-slug': 'org/repo',
-    }});
+    const app = buildApp({
+      entityAnnotations: {
+        'backstage.io/techdocs-ref': 'dir:.',
+        'github.com/project-slug': 'org/repo',
+      },
+    });
 
     const response = await request(app)
       .post('/submissions')
@@ -549,10 +576,12 @@ describe('POST /submissions', () => {
   });
 
   it('returns 400 when action=save-locally is sent without a required field, independent of vcs presence', async () => {
-    const app = buildApp({ entityAnnotations: {
-      'backstage.io/techdocs-ref': 'dir:.',
-      'github.com/project-slug': 'org/repo',
-    }});
+    const app = buildApp({
+      entityAnnotations: {
+        'backstage.io/techdocs-ref': 'dir:.',
+        'github.com/project-slug': 'org/repo',
+      },
+    });
 
     const response = await request(app)
       .post('/submissions')
@@ -588,6 +617,7 @@ git commit -m "test(backend): router integration tests for capability flags and 
 ### Task 6: Frontend API client (`techdocs-editor-react/src/api.ts`)
 
 **Files:**
+
 - Modify: `workspaces/techdocs-editor/plugins/techdocs-editor-react/src/api.ts`
 
 Re-view the full current file (161 lines) before editing.
@@ -617,6 +647,7 @@ git commit -m "feat(react): api client exposes canSaveLocally/canCreatePullReque
 ### Task 7: `SubmitEditsDialog.tsx` rewrite + tests
 
 **Files:**
+
 - Modify: `workspaces/techdocs-editor/plugins/techdocs-editor-react/src/components/SubmitEditsDialog.tsx` (277 lines, full re-view required)
 - Create: `workspaces/techdocs-editor/plugins/techdocs-editor-react/src/components/SubmitEditsDialog.test.tsx`
 
@@ -646,8 +677,12 @@ describe('SubmitEditsDialog capability-based buttons', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: /save locally/i })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /pull request/i })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /save locally/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /pull request/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('shows only Open Pull Request when canSaveLocally=false and canCreatePullRequest=true', async () => {
@@ -661,8 +696,12 @@ describe('SubmitEditsDialog capability-based buttons', () => {
       />,
     );
 
-    expect(screen.queryByRole('button', { name: /save locally/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /pull request/i })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /save locally/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /pull request/i }),
+    ).toBeInTheDocument();
   });
 
   it('shows both buttons when both flags are true', async () => {
@@ -676,8 +715,12 @@ describe('SubmitEditsDialog capability-based buttons', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: /save locally/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /pull request/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /save locally/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /pull request/i }),
+    ).toBeInTheDocument();
   });
 
   it('shows neither button when both flags are false', async () => {
@@ -690,8 +733,12 @@ describe('SubmitEditsDialog capability-based buttons', () => {
       />,
     );
 
-    expect(screen.queryByRole('button', { name: /save locally/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /pull request/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /save locally/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /pull request/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('calls onSubmit with action=save-locally when Save Locally is clicked', async () => {
@@ -729,7 +776,10 @@ describe('SubmitEditsDialog capability-based buttons', () => {
     fireEvent.click(screen.getByRole('button', { name: /pull request/i }));
 
     expect(onSubmit).toHaveBeenCalledWith(
-      expect.objectContaining({ action: 'create-pull-request', prTitle: 'Update docs' }),
+      expect.objectContaining({
+        action: 'create-pull-request',
+        prTitle: 'Update docs',
+      }),
     );
   });
 
@@ -758,6 +808,7 @@ Expected: FAIL — component doesn't yet accept `canSaveLocally`/`canCreatePullR
 - [ ] **Step 3: Rewrite the component**
 
 Re-view the current full file first. Required changes:
+
 - Replace the `isLocalSource?: boolean` prop with `canSaveLocally: boolean` and `canCreatePullRequest: boolean` (both required, not optional — the parent always knows both from the API response per Task 8).
 - Keep the changed-files list and commit-message field rendering unconditionally (as today).
 - Wrap the existing PR-specific fields (title, description, draft checkbox) in `{canCreatePullRequest && (...)}`.
@@ -812,6 +863,7 @@ git commit -m "feat(react): SubmitEditsDialog renders independent Save Locally /
 ### Task 8: `TechDocsEditorPage.tsx` update + tests
 
 **Files:**
+
 - Modify: `workspaces/techdocs-editor/plugins/techdocs-editor-react/src/components/TechDocsEditorPage.tsx:156` (`isLocalSource`), `:250-278` (`handleSubmit`), `:415` (dialog prop passing)
 - Create: `workspaces/techdocs-editor/plugins/techdocs-editor-react/src/components/TechDocsEditorPage.test.tsx`
 
@@ -893,17 +945,22 @@ Expected: Should mostly pass once `techdocsEditorApiRef` import path is confirme
 Re-view the current file in full first, especially around L156, L250-278, L415.
 
 Replace:
+
 ```ts
 const isLocalSource = branch === 'local';
 ```
+
 with reading `canSaveLocally`/`canCreatePullRequest` directly from whichever state variable holds the `/tree` or `/mkdocs` API response (re-view the file to find the exact state variable name — likely something like `mkdocsConfig` or `fileTreeResponse`):
+
 ```ts
 const canSaveLocally = mkdocsConfig?.canSaveLocally ?? false;
 const canCreatePullRequest = mkdocsConfig?.canCreatePullRequest ?? false;
 ```
+
 (Substitute the real state variable name found during re-view.)
 
 Update `handleSubmit` (current L250-278) to accept an object that includes `action` and forward it verbatim to `api.submitEdits`:
+
 ```ts
 const handleSubmit = async (submission: SubmitEditsRequest) => {
   // ...keep existing pre-submit logic (assembling changedFiles, entityRef, etc.) unchanged...
@@ -915,12 +972,14 @@ const handleSubmit = async (submission: SubmitEditsRequest) => {
   // ...keep existing post-submit logic (closing dialog, showing success state, refetch, etc.) unchanged...
 };
 ```
+
 (Re-view the current function body to see exactly what pre/post logic exists today and preserve it — only the shape of the argument and what's forwarded to `api.submitEdits` changes.)
 
 Update the dialog prop-passing site (current L415) to replace `isLocalSource={isLocalSource}` with:
+
 ```tsx
-canSaveLocally={canSaveLocally}
-canCreatePullRequest={canCreatePullRequest}
+canSaveLocally = { canSaveLocally };
+canCreatePullRequest = { canCreatePullRequest };
 ```
 
 - [ ] **Step 4: Run tests to confirm they pass**

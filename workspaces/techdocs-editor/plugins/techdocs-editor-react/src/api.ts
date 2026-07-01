@@ -34,9 +34,7 @@ import {
  */
 export interface TechDocsEditorApi {
   getMkDocsConfig(entityRef: CompoundEntityRef): Promise<MkDocsConfig>;
-  getFileTree(
-    entityRef: CompoundEntityRef,
-  ): Promise<
+  getFileTree(entityRef: CompoundEntityRef): Promise<
     DocTree & {
       branch: string;
       docsDir?: string;
@@ -96,9 +94,7 @@ export class TechDocsEditorClient implements TechDocsEditorApi {
     return res.json();
   }
 
-  async getFileTree(
-    entityRef: CompoundEntityRef,
-  ): Promise<
+  async getFileTree(entityRef: CompoundEntityRef): Promise<
     DocTree & {
       branch: string;
       docsDir?: string;

@@ -3,14 +3,10 @@ import { renderInTestApp } from '@backstage/test-utils';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 
 jest.mock('react', () =>
-  jest.requireActual(
-    '../../../../../../../../node_modules/react',
-  ),
+  jest.requireActual('../../../../../../../../node_modules/react'),
 );
 jest.mock('react/jsx-runtime', () =>
-  jest.requireActual(
-    '../../../../../../../../node_modules/react/jsx-runtime',
-  ),
+  jest.requireActual('../../../../../../../../node_modules/react/jsx-runtime'),
 );
 
 jest.mock('@backstage/core-components', () => ({
@@ -25,7 +21,9 @@ jest.mock('@backstage/core-components', () => ({
     </div>
   ),
   Page: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  Content: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Content: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
 }));
 
 jest.mock('../api', () => ({

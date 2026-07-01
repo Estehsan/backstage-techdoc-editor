@@ -64,14 +64,15 @@ function createNotFoundError(message = 'missing'): Error {
   return Object.assign(new Error(message), { name: 'NotFoundError' });
 }
 
-function buildRegistry(
-  overrides?: Partial<jest.Mocked<VcsProvider>>,
-): { registry: VcsProviderRegistry; provider: jest.Mocked<VcsProvider> } {
+function buildRegistry(overrides?: Partial<jest.Mocked<VcsProvider>>): {
+  registry: VcsProviderRegistry;
+  provider: jest.Mocked<VcsProvider>;
+} {
   const provider: jest.Mocked<VcsProvider> = {
     id: 'github',
-    canHandle: jest.fn().mockImplementation(repoUrl =>
-      repoUrl.startsWith('https://github.com/'),
-    ),
+    canHandle: jest
+      .fn()
+      .mockImplementation(repoUrl => repoUrl.startsWith('https://github.com/')),
     getDefaultBranch: jest.fn().mockResolvedValue('main'),
     readFile: jest.fn().mockRejectedValue(createNotFoundError()),
     listFiles: jest.fn().mockResolvedValue([]),

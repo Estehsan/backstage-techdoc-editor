@@ -5,14 +5,10 @@ import { EditedFile } from '@estehsaan/backstage-plugin-techdocs-editor-common';
 import { SubmitEditsDialog } from './SubmitEditsDialog';
 
 jest.mock('react', () =>
-  jest.requireActual(
-    '../../../../../../../../node_modules/react',
-  ),
+  jest.requireActual('../../../../../../../../node_modules/react'),
 );
 jest.mock('react/jsx-runtime', () =>
-  jest.requireActual(
-    '../../../../../../../../node_modules/react/jsx-runtime',
-  ),
+  jest.requireActual('../../../../../../../../node_modules/react/jsx-runtime'),
 );
 
 jest.mock('@material-ui/core', () => ({
@@ -56,13 +52,19 @@ describe('SubmitEditsDialog', () => {
   it('renders only the local save action when local save is the only capability', async () => {
     await renderDialog({ canSaveLocally: true, canCreatePullRequest: false });
 
-    expect(screen.getByRole('button', { name: 'Save Locally' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Save Locally' }),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: 'Open Pull Request' }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText('Pull Request Title')).not.toBeInTheDocument();
-    expect(screen.queryByText('Description (optional)')).not.toBeInTheDocument();
-    expect(screen.queryByText('Open as draft pull request')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Description (optional)'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Open as draft pull request'),
+    ).not.toBeInTheDocument();
   });
 
   it('renders only the pull request action when pull requests are the only capability', async () => {
@@ -75,16 +77,18 @@ describe('SubmitEditsDialog', () => {
       screen.getByRole('button', { name: 'Open Pull Request' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Pull Request Title')).toBeInTheDocument();
-    expect(screen.getAllByText('Description (optional)').length).toBeGreaterThan(
-      0,
-    );
+    expect(
+      screen.getAllByText('Description (optional)').length,
+    ).toBeGreaterThan(0);
     expect(screen.getByText('Open as draft pull request')).toBeInTheDocument();
   });
 
   it('renders both actions when both capabilities are available', async () => {
     await renderDialog({ canSaveLocally: true, canCreatePullRequest: true });
 
-    expect(screen.getByRole('button', { name: 'Save Locally' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Save Locally' }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Open Pull Request' }),
     ).toBeInTheDocument();
@@ -175,7 +179,9 @@ describe('SubmitEditsDialog', () => {
 
     resolveSubmit?.();
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Save Locally' })).toBeInTheDocument(),
+      expect(
+        screen.getByRole('button', { name: 'Save Locally' }),
+      ).toBeInTheDocument(),
     );
   });
 });

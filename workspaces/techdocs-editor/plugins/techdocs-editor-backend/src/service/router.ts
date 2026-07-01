@@ -275,8 +275,9 @@ export async function createRouter(
         resolvedDocsDir,
       );
 
-      const provider: VcsProvider =
-        source.local ? new LocalFsVcsProvider() : vcsProvider!;
+      const provider: VcsProvider = source.local
+        ? new LocalFsVcsProvider()
+        : vcsProvider!;
       const files = await provider.listFiles({
         repoUrl,
         ref: branch,

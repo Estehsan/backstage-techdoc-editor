@@ -93,7 +93,7 @@ work — superseded by this annotation-only design per explicit decision.
 `techdocs-editor-backend/src/service/router.ts`:
 
 - **`GET /sources/:namespace/:kind/:name/mkdocs`** and **`GET
-  .../tree`**: prefer `source.local` for actually reading files (unchanged
+.../tree`**: prefer `source.local` for actually reading files (unchanged
   local-read code path) when present; otherwise read via `source.vcs` +
   the resolved `VcsProvider` (unchanged VCS-read code path). Response JSON
   adds two booleans:
@@ -113,13 +113,13 @@ work — superseded by this annotation-only design per explicit decision.
 
   Handler behavior:
   - `action === 'save-locally'`: require `source.local` (400 `InputError`
-    otherwise: *"This entity has no local filesystem source — Save Locally
-    is unavailable."*). Write files directly via `LocalFsVcsProvider` to
+    otherwise: _"This entity has no local filesystem source — Save Locally
+    is unavailable."_). Write files directly via `LocalFsVcsProvider` to
     `source.local.basePath`/`docsDir`. No branch, no commit-to-git, no PR
     call. Response: `{ savedLocally: true, savedCount, savedPath }`.
   - `action === 'create-pull-request'`: require `source.vcs` (400
-    `InputError` otherwise: *"This entity has no configured VCS repository —
-    Create Pull Request is unavailable."*). Requires `prTitle`. Resolves
+    `InputError` otherwise: _"This entity has no configured VCS repository —
+    Create Pull Request is unavailable."_). Requires `prTitle`. Resolves
     default branch, fetches `mkdocs.yml` via the VCS provider, does conflict
     detection against the **remote** repo state, creates a branch, commits,
     opens the PR — all unchanged from today's VCS submission path, just
@@ -135,10 +135,10 @@ work — superseded by this annotation-only design per explicit decision.
 
 - Reads `canSaveLocally` / `canCreatePullRequest` from the `/tree` (or
   `/mkdocs`) response instead of deriving `isLocalSource` from `branch ===
-  'local'`.
+'local'`.
 - Passes both flags to `SubmitEditsDialog`.
 - `handleSubmit(action, opts)` calls `api.submitEdits(..., { ...opts,
-  action })`, replacing the current single `handleSubmit(opts)`.
+action })`, replacing the current single `handleSubmit(opts)`.
 
 `techdocs-editor-react/src/components/SubmitEditsDialog.tsx`:
 
@@ -151,7 +151,7 @@ work — superseded by this annotation-only design per explicit decision.
   - "Open Pull Request" button (existing style/icon), shown iff
     `canCreatePullRequest`. Always primary when present.
   - Each button independently triggers `onSubmit({ action: 'save-locally' |
-    'create-pull-request', ...formFields })`; clicking one does not also
+'create-pull-request', ...formFields })`; clicking one does not also
     trigger the other.
 - Success view branches on which action just completed (existing "PR
   opened" view vs. existing "saved" messaging), keyed off the response

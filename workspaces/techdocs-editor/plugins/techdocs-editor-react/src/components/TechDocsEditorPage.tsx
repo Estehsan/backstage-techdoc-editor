@@ -259,8 +259,7 @@ export function TechDocsEditorPage({
     const result = await api.submitEdits(entityRef, {
       files,
       action: opts.action,
-      prTitle:
-        opts.action === 'create-pull-request' ? opts.prTitle : undefined,
+      prTitle: opts.action === 'create-pull-request' ? opts.prTitle : undefined,
       prDescription: opts.prDescription,
       commitMessage: opts.commitMessage,
       draft: opts.draft,
