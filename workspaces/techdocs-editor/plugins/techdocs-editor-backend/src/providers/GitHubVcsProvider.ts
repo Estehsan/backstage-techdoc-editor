@@ -31,6 +31,15 @@ import { createPullRequest } from 'octokit-plugin-create-pull-request';
 
 const OctokitWithPR = Octokit.plugin(createPullRequest as any);
 
+/**
+ * Directory-tree paths that should never be surfaced as documentation files,
+ * even if they fall within the resolved docs directory (e.g. `docs_dir: .`
+ * pointing at a repo root that also contains dependency trees).
+ */
+function isExcludedPath(treePath: string): boolean {
+  return /(^|\/)node_modules\//.test(treePath);
+}
+
 /** @public */
 export class GitHubVcsProvider implements VcsProvider {
   readonly id = 'github';
@@ -168,7 +177,8 @@ export class GitHubVcsProvider implements VcsProvider {
         (item): item is { type: string; path: string } =>
           item.type === 'blob' &&
           typeof item.path === 'string' &&
-          item.path.startsWith(prefix),
+          item.path.startsWith(prefix) &&
+          !isExcludedPath(item.path),
       )
       .map(item => item.path.slice(prefix.length));
   }
