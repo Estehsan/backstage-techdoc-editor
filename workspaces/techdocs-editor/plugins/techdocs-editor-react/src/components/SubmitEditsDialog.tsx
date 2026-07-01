@@ -31,13 +31,6 @@ import OpenInNewIcon from '@material-ui/icons/OpenInNew';
 import SaveIcon from '@material-ui/icons/Save';
 import { EditedFile } from '@estehsaan/backstage-plugin-techdocs-editor-common';
 
-function getButtonLabel(loading: boolean, isLocalSource: boolean): string {
-  if (loading) {
-    return isLocalSource ? 'Saving…' : 'Submitting…';
-  }
-  return isLocalSource ? 'Save to Disk' : 'Open Pull Request';
-}
-
 const useStyles = makeStyles(theme => ({
   field: {
     marginBottom: theme.spacing(2),
@@ -66,19 +59,19 @@ export type SubmitEditsDialogProps = {
   changedFiles: EditedFile[];
   /** Called when the user dismisses the dialog without submitting. */
   onClose: () => void;
-  /** Called when the user confirms their PR details. */
+  /** Called when the user confirms a save or pull request submission. */
   onSubmit: (opts: {
+    action: 'save-locally' | 'create-pull-request';
     prTitle: string;
     prDescription: string;
     commitMessage: string;
     draft: boolean;
   }) => Promise<void>;
   defaultPrTitle?: string;
-  /**
-   * If true, hide PR fields and show simplified local save UI.
-   * Local sources write files directly to disk without creating PRs.
-   */
-  isLocalSource?: boolean;
+  /** Whether this entity's source supports saving directly to the local filesystem. */
+  canSaveLocally: boolean;
+  /** Whether this entity's source supports creating a pull request in a VCS provider. */
+  canCreatePullRequest: boolean;
 };
 
 /**
@@ -91,7 +84,8 @@ export function SubmitEditsDialog({
   onClose,
   onSubmit,
   defaultPrTitle = 'docs: update documentation',
-  isLocalSource = false,
+  canSaveLocally,
+  canCreatePullRequest,
 }: SubmitEditsDialogProps) {
   const classes = useStyles();
   const [prTitle, setPrTitle] = useState(defaultPrTitle);
@@ -101,17 +95,28 @@ export function SubmitEditsDialog({
   );
   const [draft, setDraft] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [activeAction, setActiveAction] = useState<
+    'save-locally' | 'create-pull-request' | null
+  >(null);
   const [prUrl, setPrUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async () => {
-    // For local sources, neither prTitle nor commitMessage are required
-    if (!isLocalSource && !prTitle.trim()) return;
-    if (!isLocalSource && !commitMessage.trim()) return;
+  const handleSubmit = async (
+    action: 'save-locally' | 'create-pull-request',
+  ) => {
+    if (action === 'create-pull-request' && !prTitle.trim()) return;
+    if (action === 'create-pull-request' && !commitMessage.trim()) return;
     setLoading(true);
+    setActiveAction(action);
     setError(null);
     try {
-      await onSubmit({ prTitle, prDescription, commitMessage, draft });
+      await onSubmit({
+        action,
+        prTitle,
+        prDescription,
+        commitMessage,
+        draft,
+      });
     } catch (err: any) {
       if (err.status === 409 && err.conflicts) {
         setError(
@@ -124,6 +129,7 @@ export function SubmitEditsDialog({
       }
     } finally {
       setLoading(false);
+      setActiveAction(null);
     }
   };
 
@@ -165,7 +171,7 @@ export function SubmitEditsDialog({
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>
-        {isLocalSource
+        {canSaveLocally && !canCreatePullRequest
           ? 'Save Documentation Edits'
           : 'Submit Documentation Edits'}
       </DialogTitle>
@@ -185,7 +191,7 @@ export function SubmitEditsDialog({
           ))}
         </div>
 
-        {isLocalSource && (
+        {canSaveLocally && !canCreatePullRequest && (
           <Typography
             variant="body2"
             color="textSecondary"
@@ -196,7 +202,7 @@ export function SubmitEditsDialog({
           </Typography>
         )}
 
-        {!isLocalSource && (
+        {canCreatePullRequest && (
           <>
             <TextField
               className={classes.field}
@@ -226,16 +232,16 @@ export function SubmitEditsDialog({
 
         <TextField
           className={classes.field}
-          label={isLocalSource ? 'Note (optional)' : 'Commit Message'}
+          label={canCreatePullRequest ? 'Commit Message' : 'Note (optional)'}
           fullWidth
           variant="outlined"
           size="small"
           value={commitMessage}
           onChange={e => setCommitMessage(e.target.value)}
-          required={!isLocalSource}
+          required={canCreatePullRequest}
         />
 
-        {!isLocalSource && (
+        {canCreatePullRequest && (
           <FormControlLabel
             control={
               <Checkbox
@@ -258,19 +264,31 @@ export function SubmitEditsDialog({
         <Button onClick={handleClose} disabled={loading}>
           Cancel
         </Button>
-        <Button
-          onClick={handleSubmit}
-          color="primary"
-          variant="contained"
-          disabled={
-            loading ||
-            (!isLocalSource && !prTitle.trim()) ||
-            (!isLocalSource && !commitMessage.trim())
-          }
-          startIcon={isLocalSource ? <SaveIcon /> : undefined}
-        >
-          {getButtonLabel(loading, isLocalSource)}
-        </Button>
+        {canSaveLocally && (
+          <Button
+            onClick={() => handleSubmit('save-locally')}
+            variant={canCreatePullRequest ? 'outlined' : 'contained'}
+            color="primary"
+            disabled={loading}
+            startIcon={<SaveIcon />}
+          >
+            {loading && activeAction === 'save-locally'
+              ? 'Saving…'
+              : 'Save Locally'}
+          </Button>
+        )}
+        {canCreatePullRequest && (
+          <Button
+            onClick={() => handleSubmit('create-pull-request')}
+            variant="contained"
+            color="primary"
+            disabled={loading || !prTitle.trim() || !commitMessage.trim()}
+          >
+            {loading && activeAction === 'create-pull-request'
+              ? 'Submitting…'
+              : 'Open Pull Request'}
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );
