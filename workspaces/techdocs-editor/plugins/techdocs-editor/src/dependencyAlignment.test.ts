@@ -12,13 +12,13 @@ const reactLibPkg =
 describe('techdocs editor dependency alignment', () => {
   it('pins frontend plugin dependencies to the same generation as the app', () => {
     expect(editorPkg.dependencies['@backstage/frontend-plugin-api']).toMatch(
-      /^\^0\.17\./,
+      /^\^0\.15\./,
     );
     expect(editorPkg.dependencies['@backstage/plugin-catalog-react']).toMatch(
-      /^\^3\./,
+      /^\^2\./,
     );
     expect(reactLibPkg.dependencies['@backstage/plugin-catalog-react']).toMatch(
-      /^\^3\./,
+      /^\^2\./,
     );
   });
 });

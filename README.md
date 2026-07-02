@@ -67,6 +67,27 @@ import { TechDocsEditPageAddon } from '@estehsaan/backstage-plugin-techdocs-edit
 - Permission system integration (`techdocs.editor.read` / `techdocs.editor.write`)
 - Entity content tab (`/edit-docs`) + standalone editor page
 
+## Troubleshooting
+
+### `TypeError: Cannot read properties of null (reading 'useMemo')` on `/edit-docs`
+
+This is usually an invalid-hooks runtime caused by duplicate React/Backstage frontend
+module trees being loaded at once.
+
+If your stack includes paths like:
+
+- `plugins/backstage-plugin-techdocs-editor/node_modules/react/...`
+- `.../techdocs-editor/node_modules/@backstage/frontend-plugin-api/.../ExtensionBoundary...`
+
+do both checks:
+
+1. Remove submodule-local install before running the host app from monorepo root:
+   `rm -rf plugins/backstage-plugin-techdocs-editor/node_modules`
+2. Ensure this plugin's frontend dependency generation stays aligned with the host
+   Backstage app (`@backstage/frontend-plugin-api` and
+   `@backstage/plugin-catalog-react`). A regression guard test exists at
+   `workspaces/techdocs-editor/plugins/techdocs-editor/src/dependencyAlignment.test.ts`.
+
 ## License
 
 Apache-2.0
