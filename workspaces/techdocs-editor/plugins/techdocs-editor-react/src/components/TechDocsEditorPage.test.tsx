@@ -3,10 +3,10 @@ import { renderInTestApp } from '@backstage/test-utils';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 
 jest.mock('react', () =>
-  jest.requireActual('../../../../../../../../node_modules/react'),
+  jest.requireActual('react'),
 );
 jest.mock('react/jsx-runtime', () =>
-  jest.requireActual('../../../../../../../../node_modules/react/jsx-runtime'),
+  jest.requireActual('react/jsx-runtime'),
 );
 
 jest.mock('@backstage/core-components', () => ({
