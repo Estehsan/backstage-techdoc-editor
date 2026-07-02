@@ -2,12 +2,8 @@ import '@testing-library/jest-dom';
 import { renderInTestApp } from '@backstage/test-utils';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 
-jest.mock('react', () =>
-  jest.requireActual('react'),
-);
-jest.mock('react/jsx-runtime', () =>
-  jest.requireActual('react/jsx-runtime'),
-);
+jest.mock('react', () => jest.requireActual('react'));
+jest.mock('react/jsx-runtime', () => jest.requireActual('react/jsx-runtime'));
 
 jest.mock('@backstage/core-components', () => ({
   Progress: () => <div>Loading…</div>,

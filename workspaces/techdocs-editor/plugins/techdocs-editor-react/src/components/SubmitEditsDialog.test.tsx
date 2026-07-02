@@ -4,12 +4,8 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { EditedFile } from '@estehsaan/backstage-plugin-techdocs-editor-common';
 import { SubmitEditsDialog } from './SubmitEditsDialog';
 
-jest.mock('react', () =>
-  jest.requireActual('react'),
-);
-jest.mock('react/jsx-runtime', () =>
-  jest.requireActual('react/jsx-runtime'),
-);
+jest.mock('react', () => jest.requireActual('react'));
+jest.mock('react/jsx-runtime', () => jest.requireActual('react/jsx-runtime'));
 
 jest.mock('@material-ui/core', () => ({
   ...jest.requireActual('@material-ui/core'),
