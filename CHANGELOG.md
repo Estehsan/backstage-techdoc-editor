@@ -1,3 +1,22 @@
+# [1.3.0](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.2.4...techdocs-editor-v1.3.0) (2026-07-02)
+
+
+### Bug Fixes
+
+* **frontend:** prevent duplicate React module trees in host app ([8269a17](https://github.com/Estehsan/backstage-techdoc-editor/commit/8269a17b7f1bc909795e28c764c7583ea972a414))
+* **tests:** use module-resolved react jsx-runtime mocks ([da779bc](https://github.com/Estehsan/backstage-techdoc-editor/commit/da779bc0b95bba824f2b3aaa62b740ab91bc029f))
+
+
+### Features
+
+* **backend:** GET endpoints expose canSaveLocally/canCreatePullRequest ([aa5f35c](https://github.com/Estehsan/backstage-techdoc-editor/commit/aa5f35c995d50e43bc13de179994346d686aa5c7))
+* **backend:** POST /submissions branches on action with capability guards ([563e845](https://github.com/Estehsan/backstage-techdoc-editor/commit/563e845a1b7ff989ae892f13d5add7b2d399cc4b))
+* **backend:** resolveSource returns additive local+vcs shape ([581a687](https://github.com/Estehsan/backstage-techdoc-editor/commit/581a687e2723563bf820e037b9650ce2347b56a5))
+* **common:** additive ResolvedSource + action-based SubmitEditsRequest ([18bde67](https://github.com/Estehsan/backstage-techdoc-editor/commit/18bde678848677ae7f1ee976d365a6151956c211))
+* **react:** api client exposes canSaveLocally/canCreatePullRequest and action field ([1b441c6](https://github.com/Estehsan/backstage-techdoc-editor/commit/1b441c68edf4091dc6275d6023685d9e2b1c5fd8))
+* **react:** SubmitEditsDialog renders independent Save Locally / PR actions ([5114625](https://github.com/Estehsan/backstage-techdoc-editor/commit/5114625e08f2a6394d734a90365e0371f71b331a))
+* **react:** TechDocsEditorPage wires real capability flags and action-aware submit ([8d2383c](https://github.com/Estehsan/backstage-techdoc-editor/commit/8d2383c8486e52f7f9c5cd47a7aba593d6765c6d))
+
 ## [1.2.4](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.2.3...techdocs-editor-v1.2.4) (2026-07-01)
 
 
