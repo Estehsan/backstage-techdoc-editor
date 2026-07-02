@@ -58,6 +58,31 @@ yarn test
 
 > **Iron law:** `git push` is forbidden until all seven steps produce zero errors.
 
+## Common Runtime Error: `Cannot read properties of null (reading 'useMemo')`
+
+If the editor page crashes with a stack mentioning:
+
+- `plugins/backstage-plugin-techdocs-editor/node_modules/react/...`
+- `.../techdocs-editor/node_modules/@backstage/frontend-plugin-api/.../ExtensionBoundary...`
+
+you have duplicate runtime module trees (invalid hook call scenario).
+
+**Root causes to check immediately:**
+
+1. **Submodule-local `node_modules` shadowing the monorepo root**
+   - If you run the app from the parent Backstage monorepo, remove this submodule's
+     local install first:
+   - `rm -rf plugins/backstage-plugin-techdocs-editor/node_modules`
+
+2. **Dependency generation drift against host Backstage packages**
+   - Keep `@backstage/frontend-plugin-api` and `@backstage/plugin-catalog-react`
+     in this plugin aligned with the host app generation.
+   - This repo enforces that with
+     `workspaces/techdocs-editor/plugins/techdocs-editor/src/dependencyAlignment.test.ts`.
+
+**Required response when this error appears:** resolve the duplicate module source
+before doing feature work, then rerun the full 7-step pre-push checklist.
+
 ## Architecture
 
 The backend plugin (`techdocsEditorPlugin`) exposes REST endpoints for:

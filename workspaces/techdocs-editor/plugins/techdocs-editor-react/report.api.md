@@ -24,13 +24,15 @@ export type SubmitEditsDialogProps = {
   changedFiles: EditedFile[];
   onClose: () => void;
   onSubmit: (opts: {
+    action: 'save-locally' | 'create-pull-request';
     prTitle: string;
     prDescription: string;
     commitMessage: string;
     draft: boolean;
   }) => Promise<void>;
   defaultPrTitle?: string;
-  isLocalSource?: boolean;
+  canSaveLocally: boolean;
+  canCreatePullRequest: boolean;
 };
 
 // @public
@@ -49,6 +51,9 @@ export interface TechDocsEditorApi {
   getFileTree(entityRef: CompoundEntityRef): Promise<
     DocTree & {
       branch: string;
+      docsDir?: string;
+      canSaveLocally: boolean;
+      canCreatePullRequest: boolean;
     }
   >;
   // (undocumented)
@@ -80,6 +85,9 @@ export class TechDocsEditorClient implements TechDocsEditorApi {
   getFileTree(entityRef: CompoundEntityRef): Promise<
     DocTree & {
       branch: string;
+      docsDir?: string;
+      canSaveLocally: boolean;
+      canCreatePullRequest: boolean;
     }
   >;
   // (undocumented)
@@ -113,6 +121,8 @@ export type TechDocsFileTreeProps = {
   dirtyPaths?: Set<string>;
   onSelect: (path: string) => void;
   onCreateFile?: (path: string) => void;
+  branch?: string;
+  docsDir?: string;
 };
 
 // @public

@@ -209,7 +209,7 @@ async function resolveLocalDocsDir(basePath: string): Promise<string> {
 
 /**
  * Resolve the source location from an entity's techdocs annotation.
- * Returns a discriminated union for VCS vs local filesystem sources.
+ * Returns additive local and/or VCS source information.
  *
  * @internal
  */
@@ -239,11 +239,26 @@ export async function resolveSource(
     // operations are additionally sandboxed by LocalFsVcsProvider.
     assertSafeLocalPath(absolutePath, basePath);
 
-    return {
-      type: 'local',
+    const local = {
       basePath: absolutePath,
       docsDir: await resolveLocalDocsDir(absolutePath),
     };
+
+    let vcs: ResolvedSource['vcs'];
+    try {
+      const slugUrl = resolveFromSlug(entity, scmIntegrations);
+      if (slugUrl) {
+        vcs = {
+          repoUrl: slugUrl,
+          docsDir: undefined,
+          defaultBranch: undefined,
+        };
+      }
+    } catch {
+      vcs = undefined;
+    }
+
+    return vcs ? { local, vcs } : { local };
   }
 
   // Handle url: annotations or missing annotations (try slug fallback)
@@ -251,10 +266,11 @@ export async function resolveSource(
     const slugUrl = resolveFromSlug(entity, scmIntegrations);
     if (slugUrl) {
       return {
-        type: 'vcs',
-        repoUrl: slugUrl,
-        docsDir: undefined,
-        defaultBranch: undefined,
+        vcs: {
+          repoUrl: slugUrl,
+          docsDir: undefined,
+          defaultBranch: undefined,
+        },
       };
     }
     if (!annotation) {
@@ -319,7 +335,13 @@ export async function resolveSource(
     assertSafeDocsDir(docsDir);
   }
 
-  return { type: 'vcs', repoUrl, docsDir, defaultBranch };
+  return {
+    vcs: {
+      repoUrl,
+      docsDir,
+      defaultBranch,
+    },
+  };
 }
 
 /**
@@ -340,10 +362,10 @@ export async function fetchMkdocsContent(
   remoteProvider: VcsProvider | undefined,
   branch: string,
 ): Promise<string | undefined> {
-  if (source.type === 'local') {
+  if (source.local) {
     try {
       return await fs.readFile(
-        path.join(source.basePath, 'mkdocs.yml'),
+        path.join(source.local.basePath, 'mkdocs.yml'),
         'utf-8',
       );
     } catch {
@@ -357,7 +379,7 @@ export async function fetchMkdocsContent(
 
   try {
     const result = await remoteProvider.readFile({
-      repoUrl: source.repoUrl,
+      repoUrl: source.vcs!.repoUrl,
       ref: branch,
       filePath: 'mkdocs.yml',
     });
