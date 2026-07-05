@@ -165,6 +165,20 @@ export async function createRouter(
     }
   }
 
+  function getVcsProviderOrThrow(repoUrl: string): VcsProvider {
+    const provider = providerRegistry.getForUrl(repoUrl);
+    if (provider) {
+      return provider;
+    }
+
+    const registeredProviders = providerRegistry.all().map(p => p.id);
+    throw new InputError(
+      `No VcsProvider for ${repoUrl}. ` +
+        `Registered providers: ${registeredProviders.length > 0 ? registeredProviders.join(', ') : 'none'}. ` +
+        `If you use built-in providers, add backend.add(import('@estehsaan/backstage-plugin-techdocs-editor-backend/alpha')) to your backend startup.`,
+    );
+  }
+
   // ─── GET /sources/:namespace/:kind/:name/mkdocs ───────────────────────────
   router.get(
     '/sources/:namespace/:kind/:name/mkdocs',
@@ -193,12 +207,7 @@ export async function createRouter(
       } else {
         // VCS source
         repoUrl = source.vcs!.repoUrl;
-        vcsProvider = providerRegistry.getForUrl(repoUrl);
-        if (!vcsProvider) {
-          throw new InputError(
-            `No VcsProvider registered that can handle repo: ${repoUrl}`,
-          );
-        }
+        vcsProvider = getVcsProviderOrThrow(repoUrl);
 
         branch =
           source.vcs!.defaultBranch ??
@@ -252,10 +261,7 @@ export async function createRouter(
         resolvedDocsDir = source.local.docsDir;
       } else {
         repoUrl = source.vcs!.repoUrl;
-        vcsProvider = providerRegistry.getForUrl(repoUrl);
-        if (!vcsProvider) {
-          throw new InputError(`No VcsProvider for ${repoUrl}`);
-        }
+        vcsProvider = getVcsProviderOrThrow(repoUrl);
 
         branch =
           source.vcs!.defaultBranch ??
@@ -339,10 +345,7 @@ export async function createRouter(
         repoUrl = source.vcs!.repoUrl;
         resolvedDocsDir = source.vcs!.docsDir ?? 'docs';
 
-        vcsProvider = providerRegistry.getForUrl(repoUrl);
-        if (!vcsProvider) {
-          throw new InputError(`No VcsProvider for ${repoUrl}`);
-        }
+        vcsProvider = getVcsProviderOrThrow(repoUrl);
 
         branch =
           (req.query.branch as string | undefined) ??
@@ -454,9 +457,7 @@ export async function createRouter(
         body.action === 'save-locally'
           ? new LocalFsVcsProvider()
           : (() => {
-              const p = providerRegistry.getForUrl(repoUrl);
-              if (!p) throw new InputError(`No VcsProvider for ${repoUrl}`);
-              return p;
+              return getVcsProviderOrThrow(repoUrl);
             })();
 
       const baseBranch =

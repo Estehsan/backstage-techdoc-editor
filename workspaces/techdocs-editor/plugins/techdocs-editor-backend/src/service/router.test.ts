@@ -52,6 +52,7 @@ type BuildAppOptions = {
   entityAnnotations: Record<string, string>;
   permissionResult?: AuthorizeResult;
   localSourceDir?: string;
+  registerProvider?: boolean;
 };
 
 type BuildAppResult = {
@@ -106,7 +107,25 @@ async function createLocalSource(): Promise<string> {
 async function buildApp(options: BuildAppOptions): Promise<BuildAppResult> {
   const localSourceDir = options.localSourceDir ?? (await createLocalSource());
   const { registry, provider } = buildRegistry();
+  if (options.registerProvider === false) {
+    const emptyRegistry = new VcsProviderRegistry();
+    return buildAppWithRegistry(
+      options,
+      localSourceDir,
+      emptyRegistry,
+      provider,
+    );
+  }
 
+  return buildAppWithRegistry(options, localSourceDir, registry, provider);
+}
+
+async function buildAppWithRegistry(
+  options: BuildAppOptions,
+  localSourceDir: string,
+  registry: VcsProviderRegistry,
+  provider: jest.Mocked<VcsProvider>,
+): Promise<BuildAppResult> {
   const entity: Entity = {
     apiVersion: 'backstage.io/v1alpha1',
     kind: 'Component',
@@ -285,6 +304,31 @@ describe('POST /submissions/:namespace/:kind/:name', () => {
       'https://github.com/org/repo/pull/1',
     );
     expect(provider.openPullRequest).toHaveBeenCalled();
+  });
+
+  it('returns an actionable error when action=create-pull-request and no provider is registered', async () => {
+    const { app, localSourceDir } = await buildApp({
+      entityAnnotations: {
+        'backstage.io/techdocs-ref': 'dir:.',
+        'github.com/project-slug': 'org/repo',
+      },
+      registerProvider: false,
+    });
+    localSourceDirs.push(localSourceDir);
+
+    const response = await request(app)
+      .post('/submissions/default/component/test')
+      .send({
+        files: [{ path: 'index.md', content: '# Hello', etag: '' }],
+        commitMessage: 'Update docs',
+        action: 'create-pull-request',
+        prTitle: 'Update docs',
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.message).toContain(
+      "backend.add(import('@estehsaan/backstage-plugin-techdocs-editor-backend/alpha'))",
+    );
   });
 
   it('returns 400 when the action value is missing', async () => {
