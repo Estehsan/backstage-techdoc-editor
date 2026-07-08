@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  Entity,
-  getEntitySourceLocation,
-} from '@backstage/catalog-model';
+import { Entity, getEntitySourceLocation } from '@backstage/catalog-model';
 import { Config } from '@backstage/config';
 import { InputError } from '@backstage/errors';
 import { ScmIntegrationRegistry } from '@backstage/integration';
