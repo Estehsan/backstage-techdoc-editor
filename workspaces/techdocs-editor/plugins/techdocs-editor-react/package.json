@@ -75,7 +75,7 @@
     "@backstage/core-plugin-api": "^1.12.3",
     "@backstage/plugin-catalog-react": "^2.1.0",
     "@backstage/plugin-techdocs-common": "^0.1.1",
-    "@backstage/ui": "workspace:^",
+    "@backstage/ui": "^0.16.0",
     "@estehsaan/backstage-plugin-techdocs-editor-common": "workspace:^",
     "@remixicon/react": "^4.6.0",
     "@toast-ui/editor": "^3.2.2",
@@ -97,8 +97,7 @@
   },
   "jest": {
     "moduleNameMapper": {
-      "\\.(css|less|scss|sss|styl)$": "jest-css-modules",
-      "^@backstage/ui$": "<rootDir>/../../../../../../node_modules/@backstage/ui/src/index.ts"
+      "\\.(css|less|scss|sss|styl)$": "jest-css-modules"
     }
   }
 }
