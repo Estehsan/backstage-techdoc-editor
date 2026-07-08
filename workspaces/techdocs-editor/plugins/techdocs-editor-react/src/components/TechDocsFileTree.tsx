@@ -42,7 +42,6 @@ function cx(...names: Array<string | false | undefined>): string {
   return names.filter(Boolean).join(' ');
 }
 
-
 /**
  * Props for {@link TechDocsFileTree}.
  * @public
@@ -91,7 +90,7 @@ function NewPageDialog({
     !validationError && existingPaths.has(value.trim())
       ? 'A file with that path already exists.'
       : undefined;
-  const error = touched ? (validationError ?? duplicateError) : undefined;
+  const error = touched ? validationError ?? duplicateError : undefined;
 
   const handleCreate = () => {
     setTouched(true);
@@ -186,11 +185,7 @@ function TreeNodeItem({
         >
           <RiFolderLine size={16} className={styles.icon} />
           <span className={styles.label}>{node.title}</span>
-          {open ? (
-            <RiArrowUpSLine size={16} />
-          ) : (
-            <RiArrowDownSLine size={16} />
-          )}
+          {open ? <RiArrowUpSLine size={16} /> : <RiArrowDownSLine size={16} />}
         </button>
         {open &&
           node.children!.map((child: DocTreeNode, idx: number) => (

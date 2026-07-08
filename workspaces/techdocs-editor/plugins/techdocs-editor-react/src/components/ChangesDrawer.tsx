@@ -55,13 +55,12 @@ export function ChangesDrawer({
             changed
           </Text>
           <ButtonIcon
-            label="Close"
-            variant="ghost"
+            aria-label="Close"
+            variant="tertiary"
+            icon={<RiCloseLine size={18} />}
             onPress={onClose}
             className={styles.closeBtn}
-          >
-            <RiCloseLine size={18} />
-          </ButtonIcon>
+          />
         </div>
 
         <div className={styles.body}>

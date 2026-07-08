@@ -105,7 +105,8 @@
   },
   "jest": {
     "moduleNameMapper": {
-      "\\.(css|less|scss|sss|styl)$": "jest-css-modules"
+      "\\.(css|less|scss|sss|styl)$": "jest-css-modules",
+      "^@backstage/ui$": "<rootDir>/../../../../../../node_modules/@backstage/ui/src/index.ts"
     }
   }
 }

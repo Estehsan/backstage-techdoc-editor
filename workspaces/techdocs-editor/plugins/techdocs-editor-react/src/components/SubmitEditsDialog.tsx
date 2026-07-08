@@ -145,9 +145,7 @@ export function SubmitEditsDialog({
       >
         <DialogHeader>Pull Request Opened</DialogHeader>
         <DialogBody>
-          <Text as="div">
-            Your changes have been submitted successfully.
-          </Text>
+          <Text as="div">Your changes have been submitted successfully.</Text>
           <ButtonLink
             className={styles.prLink}
             variant="primary"
@@ -249,7 +247,9 @@ export function SubmitEditsDialog({
 
             <TextField
               className={styles.field}
-              label={canCreatePullRequest ? 'Commit Message' : 'Note (optional)'}
+              label={
+                canCreatePullRequest ? 'Commit Message' : 'Note (optional)'
+              }
               value={commitMessage}
               onChange={setCommitMessage}
               isRequired={canCreatePullRequest}

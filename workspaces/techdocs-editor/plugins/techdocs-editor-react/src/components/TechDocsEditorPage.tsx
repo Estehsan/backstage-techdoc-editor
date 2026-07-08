@@ -24,7 +24,12 @@ import {
   Tooltip,
   TooltipTrigger,
 } from '@backstage/ui';
-import { RiCodeLine, RiEyeLine, RiGitPullRequestLine, RiSaveLine } from '@remixicon/react';
+import {
+  RiCodeLine,
+  RiEyeLine,
+  RiGitPullRequestLine,
+  RiSaveLine,
+} from '@remixicon/react';
 import {
   Progress,
   ResponseErrorPanel,
@@ -46,7 +51,6 @@ import { TechDocsMarkdownEditor } from './TechDocsMarkdownEditor';
 import { SubmitEditsDialog } from './SubmitEditsDialog';
 import { ChangesDrawer } from './ChangesDrawer';
 import styles from './TechDocsEditorPage.module.css';
-
 
 /**
  * Props for {@link TechDocsEditorPage}.
@@ -325,7 +329,10 @@ export function TechDocsEditorPage({
                 <Tooltip>WYSIWYG mode</Tooltip>
               </TooltipTrigger>
               <TooltipTrigger>
-                <ToggleButton id="markdown" iconStart={<RiCodeLine size={16} />}>
+                <ToggleButton
+                  id="markdown"
+                  iconStart={<RiCodeLine size={16} />}
+                >
                   Markdown
                 </ToggleButton>
                 <Tooltip>Markdown source mode</Tooltip>
