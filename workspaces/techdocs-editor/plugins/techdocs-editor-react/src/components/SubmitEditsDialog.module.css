@@ -1,0 +1,142 @@
+/*
+ * Copyright 2025 The Backstage Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+.field {
+  margin-bottom: var(--bui-space-4);
+}
+
+.textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  padding: var(--bui-space-2);
+  border: 1px solid var(--bui-border-1);
+  border-radius: var(--bui-radius-2);
+  background: var(--bui-bg-neutral-1);
+  color: var(--bui-fg-primary);
+  resize: vertical;
+  min-height: 72px;
+}
+
+.textarea:focus-visible {
+  outline: 2px solid var(--bui-border-2);
+  outline-offset: -1px;
+}
+
+.changedFiles {
+  margin-bottom: var(--bui-space-4);
+}
+
+.fileChip {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--bui-fg-secondary);
+}
+
+.prLink {
+  margin-top: var(--bui-space-4);
+}
+
+.diffContainer {
+  font-family: monospace;
+  font-size: 0.78rem;
+  overflow-x: auto;
+  background-color: #f6f8fa;
+  border-radius: var(--bui-radius-2);
+  padding: var(--bui-space-2);
+  margin-bottom: var(--bui-space-4);
+}
+
+.diffFileHeader {
+  font-weight: 700;
+  font-size: 0.8rem;
+  margin-top: var(--bui-space-2);
+  margin-bottom: var(--bui-space-1);
+  padding: var(--bui-space-1) var(--bui-space-2);
+  color: var(--bui-fg-primary);
+  background-color: #e8ecf0;
+  border-radius: var(--bui-radius-1);
+}
+
+.hunkSeparator {
+  color: var(--bui-fg-info);
+  padding: 0 8px;
+  line-height: 1.6;
+  user-select: none;
+}
+
+.lineAdded,
+.lineRemoved,
+.lineContext {
+  display: block;
+  padding: 0 8px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.lineAdded {
+  background-color: #e6ffec;
+  color: #24292f;
+}
+
+.lineAdded::before {
+  content: '+';
+  margin-right: 8px;
+  color: #28a745;
+}
+
+.lineRemoved {
+  background-color: #ffebe9;
+  color: #24292f;
+}
+
+.lineRemoved::before {
+  content: '-';
+  margin-right: 8px;
+  color: #d1242f;
+}
+
+.lineContext {
+  color: var(--bui-fg-secondary);
+}
+
+.lineContext::before {
+  content: ' ';
+  margin-right: 8px;
+}
+
+.noChanges {
+  color: var(--bui-fg-secondary);
+  font-style: italic;
+  padding: var(--bui-space-2);
+}
+
+@media (prefers-color-scheme: dark) {
+  .diffContainer {
+    background-color: #1e1e1e;
+  }
+  .diffFileHeader {
+    background-color: #2d2d2d;
+  }
+  .lineAdded {
+    background-color: #1a3a1a;
+    color: #7ec878;
+  }
+  .lineRemoved {
+    background-color: #3a1a1a;
+    color: #e07070;
+  }
+}

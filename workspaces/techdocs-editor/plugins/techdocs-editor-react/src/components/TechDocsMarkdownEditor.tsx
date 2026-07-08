@@ -15,28 +15,12 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { makeStyles, Typography } from '@material-ui/core';
+import { Text } from '@backstage/ui';
 import '@toast-ui/editor/dist/toastui-editor.css';
+import styles from './TechDocsMarkdownEditor.module.css';
 
 // Lazy-load Toast UI to avoid SSR issues
 const EditorPromise = import('@toast-ui/react-editor').then(m => m.Editor);
-
-const useStyles = makeStyles(() => ({
-  editorWrapper: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    '& .toastui-editor-defaultUI': {
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-    },
-    '& .toastui-editor-main': {
-      flex: 1,
-    },
-  },
-}));
 
 /**
  * Props for {@link TechDocsMarkdownEditor}.
@@ -61,7 +45,6 @@ export function TechDocsMarkdownEditor({
   onChange,
   sourceMode = false,
 }: TechDocsMarkdownEditorProps) {
-  const classes = useStyles();
   const editorRef = useRef<any>(null);
   const [EditorComponent, setEditorComponent] = useState<any>(null);
   const [editorLoadError, setEditorLoadError] = useState<string | undefined>();
@@ -95,20 +78,20 @@ export function TechDocsMarkdownEditor({
 
   if (editorLoadError) {
     return (
-      <div className={classes.editorWrapper}>
-        <Typography color="error" variant="body2">
+      <div className={styles.editorWrapper}>
+        <Text color="danger" variant="body-small">
           {editorLoadError}
-        </Typography>
+        </Text>
       </div>
     );
   }
 
   if (!EditorComponent) {
-    return <div className={classes.editorWrapper}>Loading editor…</div>;
+    return <div className={styles.editorWrapper}>Loading editor…</div>;
   }
 
   return (
-    <div className={classes.editorWrapper}>
+    <div className={styles.editorWrapper}>
       <EditorComponent
         ref={editorRef}
         initialValue={initialContent || ' '}
