@@ -234,6 +234,42 @@ describe('resolveSource', () => {
       expect(result.vcs).toBeUndefined();
     });
 
+    it('treats dir: on a remote GitHub-hosted entity as a VCS source (builders-library pattern)', async () => {
+      // Entities ingested via the GitHub catalog provider have a url: source-location
+      // pointing at GitHub, not a file:// path. The plugin must resolve dir:. against
+      // that URL (like techdocs-node's DirectoryPreparer does) instead of falling back
+      // to process.cwd(), which would show wrong/stale docs in the editor.
+      const entity: Entity = {
+        apiVersion: 'backstage.io/v1alpha1',
+        kind: 'Component',
+        metadata: {
+          name: 'builders-library',
+          annotations: {
+            'backstage.io/techdocs-ref': 'dir:.',
+            'backstage.io/source-location':
+              'url:https://github.com/org/repo/blob/main/backstage-catalog.yaml',
+            'github.com/project-slug': 'org/repo',
+          },
+        },
+        spec: { type: 'library', lifecycle: 'production', owner: 'team' },
+      };
+
+      const result = await resolveSource(
+        entity,
+        scmIntegrations,
+        reader,
+        config,
+      );
+
+      // Must resolve to a VCS source pointing at the GitHub repo, not a local path.
+      expect(result.local).toBeUndefined();
+      expect(result.vcs).toEqual({
+        repoUrl: 'https://github.com/org/repo',
+        docsDir: undefined,
+        defaultBranch: 'main',
+      });
+    });
+
     it('populates only vcs when url: annotation is present', async () => {
       const entity: Entity = {
         apiVersion: 'backstage.io/v1alpha1',

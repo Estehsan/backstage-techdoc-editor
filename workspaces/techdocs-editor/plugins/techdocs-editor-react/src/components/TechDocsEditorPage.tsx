@@ -147,8 +147,15 @@ export function TechDocsEditorPage({
   // the memoized file tree from re-rendering while typing.
   const [dirtyPaths, setDirtyPaths] = useState<Set<string>>(new Set());
   const originalEtags = useRef<Map<string, string>>(new Map());
+  // Pristine content as loaded from the source, keyed by path. Toast UI
+  // Editor fires `onChange` once on mount as it re-serializes the markdown
+  // internally, even without any user interaction. Comparing against this
+  // baseline lets us tell a real edit apart from that mount-time noise, so
+  // simply opening a file never silently marks it dirty and pulls it into
+  // the next submission.
+  const originalContents = useRef<Map<string, string>>(new Map());
 
-  const [sourceMode, setSourceMode] = useState(false);
+  const [sourceMode, setSourceMode] = useState(true);
   const [submitOpen, setSubmitOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [canSaveLocally, setCanSaveLocally] = useState(false);
@@ -202,6 +209,7 @@ export function TechDocsEditorPage({
       .then(({ content, etag }) => {
         setFileContent(content);
         originalEtags.current.set(selectedPath, etag);
+        originalContents.current.set(selectedPath, content);
       })
       .catch(e => setFileError(e))
       .finally(() => setFileLoading(false));
@@ -210,15 +218,29 @@ export function TechDocsEditorPage({
   const handleContentChange = useCallback(
     (markdown: string) => {
       if (!selectedPath) return;
-      const etag = originalEtags.current.get(selectedPath) ?? '';
+      const original = originalContents.current.get(selectedPath);
       setEditedFiles(prev => {
         const next = new Map(prev);
+        if (markdown === original) {
+          // Content matches what was loaded (or the editor's mount-time
+          // re-serialization produced an identical result) — this isn't a
+          // real edit, so don't include it in the next submission.
+          next.delete(selectedPath);
+          return next;
+        }
+        const etag = originalEtags.current.get(selectedPath) ?? '';
         next.set(selectedPath, { path: selectedPath, content: markdown, etag });
         return next;
       });
-      setDirtyPaths(prev =>
-        prev.has(selectedPath) ? prev : new Set(prev).add(selectedPath),
-      );
+      setDirtyPaths(prev => {
+        if (markdown === original) {
+          if (!prev.has(selectedPath)) return prev;
+          const next = new Set(prev);
+          next.delete(selectedPath);
+          return next;
+        }
+        return prev.has(selectedPath) ? prev : new Set(prev).add(selectedPath);
+      });
     },
     [selectedPath],
   );
@@ -409,6 +431,7 @@ export function TechDocsEditorPage({
         <SubmitEditsDialog
           open={submitOpen}
           changedFiles={Array.from(editedFiles.values())}
+          originalContents={originalContents.current}
           onClose={() => setSubmitOpen(false)}
           onSubmit={handleSubmit}
           defaultPrTitle={`docs: update ${

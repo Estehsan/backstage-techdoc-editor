@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { Entity } from '@backstage/catalog-model';
+import {
+  Entity,
+  getEntitySourceLocation,
+} from '@backstage/catalog-model';
 import { Config } from '@backstage/config';
 import { InputError } from '@backstage/errors';
 import { ScmIntegrationRegistry } from '@backstage/integration';
@@ -208,6 +211,67 @@ async function resolveLocalDocsDir(basePath: string): Promise<string> {
 }
 
 /**
+ * Parse a resolved SCM URL into a {@link ResolvedSource} with a vcs entry.
+ * Handles GitHub, GitLab, and generic SCM hosts.
+ *
+ * @internal
+ */
+function resolveVcsSourceFromUrl(
+  target: string,
+  scmIntegrations: ScmIntegrationRegistry,
+): ResolvedSource {
+  const integration = scmIntegrations.byUrl(target);
+  if (!integration) {
+    throw new InputError(
+      `No SCM integration configured for URL: ${target}. ` +
+        `Add an entry in integrations.github or integrations.gitlab in app-config.yaml.`,
+    );
+  }
+
+  const url = new URL(target);
+  const pathParts = url.pathname.split('/').filter(Boolean);
+
+  let repoUrl: string;
+  let defaultBranch: string | undefined;
+  let docsDir: string | undefined;
+
+  if (integration.type === 'github') {
+    const owner = pathParts[0];
+    const repo = pathParts[1];
+    if (!owner || !repo) {
+      throw new InputError(
+        `Cannot parse owner/repo from GitHub URL: ${target}`,
+      );
+    }
+    repoUrl = `https://github.com/${owner}/${repo}`;
+    defaultBranch = pathParts[3]; // after 'tree'
+    docsDir = url.hash ? url.hash.slice(1) : undefined;
+  } else if (integration.type === 'gitlab') {
+    const treeIdx = pathParts.indexOf('tree');
+    const repo =
+      treeIdx > 1
+        ? pathParts.slice(0, treeIdx - 1).join('/')
+        : pathParts.slice(0, 2).join('/');
+    repoUrl = `${url.protocol}//${url.host}/${repo}`;
+    defaultBranch = treeIdx >= 0 ? pathParts[treeIdx + 1] : undefined;
+    docsDir = url.hash ? url.hash.slice(1) : undefined;
+  } else {
+    repoUrl = `${url.protocol}//${url.host}${url.pathname
+      .split('/')
+      .slice(0, 3)
+      .join('/')}`;
+    docsDir = undefined;
+    defaultBranch = undefined;
+  }
+
+  if (docsDir) {
+    assertSafeDocsDir(docsDir);
+  }
+
+  return { vcs: { repoUrl, docsDir, defaultBranch } };
+}
+
+/**
  * Resolve the source location from an entity's techdocs annotation.
  * Returns additive local and/or VCS source information.
  *
@@ -226,8 +290,38 @@ export async function resolveSource(
     // Missing annotation — try slug fallback below
   }
 
-  // Handle dir: annotations for local filesystem
+  // Handle dir: annotations — may be local (file://) or remote (url:)
   if (annotation && annotation.type === 'dir') {
+    // Detect entity's source location type using the same approach as
+    // techdocs-node's transformDirLocation / getEntitySourceLocation.
+    // When an entity is loaded from GitHub (catalog provider or url: location),
+    // its source-location annotation is a url: type, not file://.  In that
+    // case, resolve the dir: target against the remote URL (e.g. "." →
+    // repo root) and treat it as a VCS source — matching the behaviour of the
+    // official TechDocs DirectoryPreparer.
+    let sourceLocation: { type: string; target: string } | undefined;
+    try {
+      sourceLocation = getEntitySourceLocation(entity);
+    } catch {
+      // Entity has no source location annotation — fall through to local logic.
+    }
+
+    if (
+      sourceLocation &&
+      sourceLocation.type === 'url' &&
+      !sourceLocation.target.startsWith('file://')
+    ) {
+      // Remote entity (GitHub/GitLab catalog provider): resolve dir: target
+      // against the source URL (e.g. "." → repo root) and treat as VCS source,
+      // matching the behaviour of the official TechDocs DirectoryPreparer.
+      const resolvedUrl = scmIntegrations.resolveUrl({
+        url: annotation.target,
+        base: sourceLocation.target,
+      });
+      return resolveVcsSourceFromUrl(resolvedUrl, scmIntegrations);
+    }
+
+    // Local entity (file:// source-location or no source-location).
     const dirRelativePath = annotation.target; // e.g., ".", "./docs", "custom-docs"
     const basePath = resolveLocalBasePath(entity, config);
 
@@ -286,62 +380,7 @@ export async function resolveSource(
     );
   }
 
-  const target = annotation.target;
-  const integration = scmIntegrations.byUrl(target);
-  if (!integration) {
-    throw new InputError(
-      `No SCM integration configured for URL: ${target}. ` +
-        `Add an entry in integrations.github or integrations.gitlab in app-config.yaml.`,
-    );
-  }
-
-  const url = new URL(target);
-  const pathParts = url.pathname.split('/').filter(Boolean);
-
-  let repoUrl: string;
-  let defaultBranch: string | undefined;
-  let docsDir: string | undefined;
-
-  if (integration.type === 'github') {
-    const owner = pathParts[0];
-    const repo = pathParts[1];
-    if (!owner || !repo) {
-      throw new InputError(
-        `Cannot parse owner/repo from GitHub URL: ${target}`,
-      );
-    }
-    repoUrl = `https://github.com/${owner}/${repo}`;
-    defaultBranch = pathParts[3]; // after 'tree'
-    docsDir = url.hash ? url.hash.slice(1) : undefined;
-  } else if (integration.type === 'gitlab') {
-    const treeIdx = pathParts.indexOf('tree');
-    const repo =
-      treeIdx > 1
-        ? pathParts.slice(0, treeIdx - 1).join('/')
-        : pathParts.slice(0, 2).join('/');
-    repoUrl = `${url.protocol}//${url.host}/${repo}`;
-    defaultBranch = treeIdx >= 0 ? pathParts[treeIdx + 1] : undefined;
-    docsDir = url.hash ? url.hash.slice(1) : undefined;
-  } else {
-    repoUrl = `${url.protocol}//${url.host}${url.pathname
-      .split('/')
-      .slice(0, 3)
-      .join('/')}`;
-    docsDir = undefined;
-    defaultBranch = undefined;
-  }
-
-  if (docsDir) {
-    assertSafeDocsDir(docsDir);
-  }
-
-  return {
-    vcs: {
-      repoUrl,
-      docsDir,
-      defaultBranch,
-    },
-  };
+  return resolveVcsSourceFromUrl(annotation.target, scmIntegrations);
 }
 
 /**
