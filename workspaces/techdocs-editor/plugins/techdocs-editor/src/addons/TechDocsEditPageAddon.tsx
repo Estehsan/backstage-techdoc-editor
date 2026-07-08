@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import EditIcon from '@material-ui/icons/Edit';
-import { Button, Tooltip } from '@material-ui/core';
+import { RiEditLine } from '@remixicon/react';
+import { ButtonLink, Tooltip, TooltipTrigger } from '@backstage/ui';
 import {
   createTechDocsAddonExtension,
   TechDocsAddonLocations,
@@ -71,16 +71,16 @@ function TechDocsEditPageAddonComponent() {
     : editorPath;
 
   return (
-    <Tooltip title="Edit this documentation page">
-      <Button
+    <TooltipTrigger>
+      <ButtonLink
         size="small"
-        variant="outlined"
-        color="primary"
-        startIcon={<EditIcon fontSize="small" />}
+        variant="secondary"
+        iconStart={<RiEditLine size={16} />}
         href={editorUrl}
       >
         Edit this page
-      </Button>
-    </Tooltip>
+      </ButtonLink>
+      <Tooltip>Edit this documentation page</Tooltip>
+    </TooltipTrigger>
   );
 }
