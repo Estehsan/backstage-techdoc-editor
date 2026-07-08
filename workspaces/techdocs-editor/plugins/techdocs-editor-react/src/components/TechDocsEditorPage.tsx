@@ -16,18 +16,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   Button,
-  ButtonGroup,
-  CircularProgress,
-  Divider,
-  makeStyles,
-  Snackbar,
+  Text,
+  ToggleButton,
+  ToggleButtonGroup,
   Tooltip,
-  Typography,
-} from '@material-ui/core';
-import CodeIcon from '@material-ui/icons/Code';
-import VisibilityIcon from '@material-ui/icons/Visibility';
-import SaveIcon from '@material-ui/icons/Save';
+  TooltipTrigger,
+} from '@backstage/ui';
+import { RiCodeLine, RiEyeLine, RiSaveLine } from '@remixicon/react';
 import {
   Progress,
   ResponseErrorPanel,
@@ -47,55 +44,8 @@ import { useTechDocsEditorApi } from '../api';
 import { TechDocsFileTree } from './TechDocsFileTree';
 import { TechDocsMarkdownEditor } from './TechDocsMarkdownEditor';
 import { SubmitEditsDialog } from './SubmitEditsDialog';
+import styles from './TechDocsEditorPage.module.css';
 
-const useStyles = makeStyles(theme => ({
-  shell: {
-    height: 'calc(100vh - 120px)',
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  toolbar: {
-    display: 'flex',
-    alignItems: 'center',
-    padding: theme.spacing(1, 2),
-    borderBottom: `1px solid ${theme.palette.divider}`,
-    gap: theme.spacing(1),
-    flexShrink: 0,
-  },
-  body: {
-    display: 'flex',
-    flex: 1,
-    overflow: 'hidden',
-  },
-  editorArea: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-  },
-  noFileSelected: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    color: theme.palette.text.secondary,
-  },
-  unsavedBadge: {
-    marginLeft: 'auto',
-    color: theme.palette.warning.main,
-    fontWeight: 'bold',
-    fontSize: '0.8rem',
-  },
-  changedCount: {
-    marginLeft: theme.spacing(1),
-    padding: theme.spacing(0.25, 0.75),
-    borderRadius: 12,
-    backgroundColor: theme.palette.warning.main,
-    color: theme.palette.warning.contrastText,
-    fontSize: '0.7rem',
-    fontWeight: 'bold',
-  },
-}));
 
 /**
  * Props for {@link TechDocsEditorPage}.
@@ -118,7 +68,6 @@ export function TechDocsEditorPage({
   initialPath,
   hasTechDocsAnnotation = true,
 }: TechDocsEditorPageProps) {
-  const classes = useStyles();
   const api = useTechDocsEditorApi();
 
   const [loading, setLoading] = useState(true);
@@ -303,6 +252,14 @@ export function TechDocsEditorPage({
 
   const dirtyCount = dirtyPaths.size;
 
+  // Auto-hide the success toast after 6 seconds (replaces MUI Snackbar's
+  // autoHideDuration, which BUI's Alert has no equivalent for).
+  useEffect(() => {
+    if (!successMessage) return undefined;
+    const timer = setTimeout(() => setSuccessMessage(null), 6000);
+    return () => clearTimeout(timer);
+  }, [successMessage]);
+
   // Warn the user before leaving (reload/close) if there are unsaved edits.
   useEffect(() => {
     if (dirtyCount === 0) return undefined;
@@ -348,72 +305,72 @@ export function TechDocsEditorPage({
         }`}
       />
       <Content noPadding>
-        <div className={classes.shell}>
+        <div className={styles.shell}>
           {/* Toolbar */}
-          <div className={classes.toolbar}>
-            <ButtonGroup size="small" variant="outlined">
-              <Tooltip title="WYSIWYG mode">
-                <Button
-                  onClick={() => setSourceMode(false)}
-                  color={!sourceMode ? 'primary' : 'default'}
-                  startIcon={<VisibilityIcon fontSize="small" />}
-                >
+          <div className={styles.toolbar}>
+            <ToggleButtonGroup
+              selectionMode="single"
+              disallowEmptySelection
+              selectedKeys={new Set([sourceMode ? 'markdown' : 'visual'])}
+              onSelectionChange={keys =>
+                setSourceMode([...keys][0] === 'markdown')
+              }
+            >
+              <TooltipTrigger>
+                <ToggleButton id="visual" iconStart={<RiEyeLine size={16} />}>
                   Visual
-                </Button>
-              </Tooltip>
-              <Tooltip title="Markdown source mode">
-                <Button
-                  onClick={() => setSourceMode(true)}
-                  color={sourceMode ? 'primary' : 'default'}
-                  startIcon={<CodeIcon fontSize="small" />}
-                >
+                </ToggleButton>
+                <Tooltip>WYSIWYG mode</Tooltip>
+              </TooltipTrigger>
+              <TooltipTrigger>
+                <ToggleButton id="markdown" iconStart={<RiCodeLine size={16} />}>
                   Markdown
-                </Button>
-              </Tooltip>
-            </ButtonGroup>
+                </ToggleButton>
+                <Tooltip>Markdown source mode</Tooltip>
+              </TooltipTrigger>
+            </ToggleButtonGroup>
 
-            <Typography variant="caption" color="textSecondary">
+            <Text variant="body-x-small" color="secondary">
               Branch: <strong>{branch}</strong>
-            </Typography>
+            </Text>
 
             {dirtyCount > 0 && (
-              <Typography className={classes.unsavedBadge} variant="caption">
+              <Text className={styles.unsavedBadge} variant="body-x-small">
                 ● {dirtyCount} file{dirtyCount > 1 ? 's' : ''} changed
-              </Typography>
+              </Text>
             )}
 
             <div style={{ marginLeft: 'auto' }}>
               <Button
-                variant="contained"
-                color="primary"
-                disabled={dirtyCount === 0}
-                startIcon={<SaveIcon />}
-                onClick={() => setSubmitOpen(true)}
+                variant="primary"
+                isDisabled={dirtyCount === 0}
+                iconStart={<RiSaveLine size={16} />}
+                onPress={() => setSubmitOpen(true)}
               >
                 Submit Changes
                 {dirtyCount > 0 && (
-                  <span className={classes.changedCount}>{dirtyCount}</span>
+                  <span className={styles.changedCount}>{dirtyCount}</span>
                 )}
               </Button>
             </div>
           </div>
 
-          <Divider />
+          <hr className={styles.divider} />
 
           {/* Body: sidebar + editor */}
-          <div className={classes.body}>
+          <div className={styles.body}>
             {fileTree}
 
-            <div className={classes.editorArea}>
+            <div className={styles.editorArea}>
               {fileLoading && (
-                <div className={classes.noFileSelected}>
-                  <CircularProgress size={24} />
+                <div className={styles.noFileSelected}>
+                  <Text color="secondary">Loading…</Text>
                 </div>
               )}
               {fileError && <ResponseErrorPanel error={fileError} />}
               {!selectedPath && !fileLoading && (
-                <div className={classes.noFileSelected}>
-                  <Typography>Select a file to edit</Typography>
+                <div className={styles.noFileSelected}>
+                  <Text color="secondary">Select a file to edit</Text>
                 </div>
               )}
               {selectedPath && !fileLoading && !fileError && (
@@ -442,13 +399,13 @@ export function TechDocsEditorPage({
         />
 
         {/* Success notification for local saves */}
-        <Snackbar
-          open={!!successMessage}
-          autoHideDuration={6000}
-          onClose={() => setSuccessMessage(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-          message={successMessage ?? ''}
-        />
+        {successMessage && (
+          <Alert
+            status="success"
+            title={successMessage}
+            className={styles.toast}
+          />
+        )}
       </Content>
     </Page>
   );
