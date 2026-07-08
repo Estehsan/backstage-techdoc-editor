@@ -17,64 +17,31 @@
 import { useMemo, useState } from 'react';
 import {
   Button,
-  Collapse,
+  ButtonIcon,
   Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  List,
-  ListItem,
-  ListItemText,
-  makeStyles,
+  DialogBody,
+  DialogFooter,
+  DialogHeader,
+  Text,
   TextField,
   Tooltip,
-  Typography,
-} from '@material-ui/core';
-import ExpandLessIcon from '@material-ui/icons/ExpandLess';
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import FolderIcon from '@material-ui/icons/Folder';
-import InsertDriveFileIcon from '@material-ui/icons/InsertDriveFile';
-import NoteAddIcon from '@material-ui/icons/NoteAdd';
+  TooltipTrigger,
+} from '@backstage/ui';
+import {
+  RiArrowDownSLine,
+  RiArrowUpSLine,
+  RiFileAddLine,
+  RiFileLine,
+  RiFolderLine,
+} from '@remixicon/react';
 import { DocTreeNode } from '@estehsaan/backstage-plugin-techdocs-editor-common';
+import styles from './TechDocsFileTree.module.css';
 
-const useStyles = makeStyles(theme => ({
-  root: {
-    width: '100%',
-    maxWidth: 280,
-    backgroundColor: theme.palette.background.paper,
-    borderRight: `1px solid ${theme.palette.divider}`,
-    overflowY: 'auto',
-    height: '100%',
-  },
-  header: {
-    padding: theme.spacing(1, 2),
-    borderBottom: `1px solid ${theme.palette.divider}`,
-  },
-  emptyState: {
-    padding: theme.spacing(2),
-  },
-  nested: {
-    paddingLeft: theme.spacing(3),
-  },
-  activeItem: {
-    backgroundColor: theme.palette.action.selected,
-  },
-  fileIcon: {
-    minWidth: 32,
-  },
-  newPageBtn: {
-    padding: 4,
-  },
-  dirtyDot: {
-    width: 8,
-    height: 8,
-    borderRadius: '50%',
-    backgroundColor: theme.palette.warning.main,
-    display: 'inline-block',
-    marginLeft: theme.spacing(0.5),
-  },
-}));
+/** Join a list of class names, dropping falsy values. */
+function cx(...names: Array<string | false | undefined>): string {
+  return names.filter(Boolean).join(' ');
+}
+
 
 /**
  * Props for {@link TechDocsFileTree}.
@@ -141,40 +108,48 @@ function NewPageDialog({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-      <DialogTitle>Create New Page</DialogTitle>
-      <DialogContent>
+    <Dialog
+      isOpen={open}
+      onOpenChange={o => {
+        if (!o) handleClose();
+      }}
+      width={600}
+    >
+      <DialogHeader>Create New Page</DialogHeader>
+      <DialogBody>
         <TextField
-          fullWidth
           label="File path"
           placeholder="e.g. getting-started.md or guides/setup.md"
-          helperText={
-            error ??
-            'Path is relative to the docs directory. Use sub-folders to organise pages.'
+          description={
+            !error
+              ? 'Path is relative to the docs directory. Use sub-folders to organise pages.'
+              : undefined
           }
-          error={!!error}
           value={value}
-          onChange={e => setValue(e.target.value)}
+          onChange={setValue}
           onBlur={() => setTouched(true)}
           onKeyDown={e => {
             if (e.key === 'Enter') handleCreate();
           }}
-          variant="outlined"
-          size="small"
-          style={{ marginTop: 8 }}
         />
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
+        {error && (
+          <Text color="danger" variant="body-x-small">
+            {error}
+          </Text>
+        )}
+      </DialogBody>
+      <DialogFooter>
+        <Button variant="secondary" onPress={handleClose}>
+          Cancel
+        </Button>
         <Button
-          variant="contained"
-          color="primary"
-          onClick={handleCreate}
-          disabled={touched && !!(validationError ?? duplicateError)}
+          variant="primary"
+          onPress={handleCreate}
+          isDisabled={touched && !!(validationError ?? duplicateError)}
         >
           Create
         </Button>
-      </DialogActions>
+      </DialogFooter>
     </Dialog>
   );
 }
@@ -194,7 +169,6 @@ function TreeNodeItem({
   dirtyPaths,
   onSelect,
 }: TreeNodeProps) {
-  const classes = useStyles();
   const [open, setOpen] = useState(true);
   const hasChildren = node.children && node.children.length > 0;
   const isFile = !!node.path;
@@ -204,56 +178,50 @@ function TreeNodeItem({
   if (hasChildren) {
     return (
       <>
-        <ListItem
-          button
+        <button
+          type="button"
+          className={styles.row}
           style={{ paddingLeft: depth * 16 + 8 }}
           onClick={() => setOpen(!open)}
         >
-          <FolderIcon fontSize="small" className={classes.fileIcon} />
-          <ListItemText primary={node.title} />
+          <RiFolderLine size={16} className={styles.icon} />
+          <span className={styles.label}>{node.title}</span>
           {open ? (
-            <ExpandLessIcon fontSize="small" />
+            <RiArrowUpSLine size={16} />
           ) : (
-            <ExpandMoreIcon fontSize="small" />
+            <RiArrowDownSLine size={16} />
           )}
-        </ListItem>
-        <Collapse in={open} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            {node.children!.map((child: DocTreeNode, idx: number) => (
-              <TreeNodeItem
-                key={child.path ?? child.title ?? idx}
-                node={child}
-                depth={depth + 1}
-                selectedPath={selectedPath}
-                dirtyPaths={dirtyPaths}
-                onSelect={onSelect}
-              />
-            ))}
-          </List>
-        </Collapse>
+        </button>
+        {open &&
+          node.children!.map((child: DocTreeNode, idx: number) => (
+            <TreeNodeItem
+              key={child.path ?? child.title ?? idx}
+              node={child}
+              depth={depth + 1}
+              selectedPath={selectedPath}
+              dirtyPaths={dirtyPaths}
+              onSelect={onSelect}
+            />
+          ))}
       </>
     );
   }
 
   return (
-    <ListItem
-      button
+    <button
+      type="button"
+      className={cx(styles.row, isActive && styles.rowActive)}
       style={{ paddingLeft: depth * 16 + 8 }}
-      className={isActive ? classes.activeItem : undefined}
       onClick={() => isFile && onSelect(node.path!)}
     >
-      <InsertDriveFileIcon fontSize="small" className={classes.fileIcon} />
-      <ListItemText
-        primary={
-          <>
-            {node.title}
-            {isDirty && (
-              <span className={classes.dirtyDot} title="Unsaved changes" />
-            )}
-          </>
-        }
-      />
-    </ListItem>
+      <RiFileLine size={16} className={styles.icon} />
+      <span className={styles.label}>
+        {node.title}
+        {isDirty && (
+          <span className={styles.dirtyDot} title="Unsaved changes" />
+        )}
+      </span>
+    </button>
   );
 }
 
@@ -280,7 +248,6 @@ export function TechDocsFileTree({
   branch,
   docsDir,
 }: TechDocsFileTreeProps) {
-  const classes = useStyles();
   const [dialogOpen, setDialogOpen] = useState(false);
   const existingPaths = useMemo(() => new Set(collectPaths(nodes)), [nodes]);
 
@@ -290,27 +257,20 @@ export function TechDocsFileTree({
   };
 
   return (
-    <div className={classes.root}>
-      <div
-        className={classes.header}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <Typography variant="caption">Documentation Files</Typography>
+    <div className={styles.root}>
+      <div className={styles.header}>
+        <Text variant="body-x-small">Documentation Files</Text>
         {onCreateFile && (
-          <Tooltip title="New page">
-            <IconButton
+          <TooltipTrigger>
+            <ButtonIcon
+              variant="tertiary"
               size="small"
-              className={classes.newPageBtn}
-              onClick={() => setDialogOpen(true)}
+              icon={<RiFileAddLine size={16} />}
               aria-label="Create new page"
-            >
-              <NoteAddIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+              onPress={() => setDialogOpen(true)}
+            />
+            <Tooltip>New page</Tooltip>
+          </TooltipTrigger>
         )}
       </div>
       <NewPageDialog
@@ -320,22 +280,22 @@ export function TechDocsFileTree({
         onCreate={handleCreate}
       />
       {nodes.length === 0 ? (
-        <div className={classes.emptyState}>
-          <Typography variant="body2" color="textSecondary" gutterBottom>
+        <div className={styles.emptyState}>
+          <Text variant="body-small" color="secondary" as="div">
             No documentation files found
             {docsDir && docsDir !== '.' ? ` in “${docsDir}”` : ''}
             {branch ? ` on “${branch}”` : ''}.
-          </Typography>
-          <Typography variant="caption" color="textSecondary">
+          </Text>
+          <Text variant="body-x-small" color="secondary" as="div">
             Check the entity's <code>backstage.io/techdocs-ref</code> annotation
             and that the docs directory exists.
             {onCreateFile
               ? ' Use the + button above to create the first page.'
               : ''}
-          </Typography>
+          </Text>
         </div>
       ) : (
-        <List dense component="nav">
+        <div role="tree">
           {nodes.map((node, idx) => (
             <TreeNodeItem
               key={node.path ?? node.title ?? idx}
@@ -346,7 +306,7 @@ export function TechDocsFileTree({
               onSelect={onSelect}
             />
           ))}
-        </List>
+        </div>
       )}
     </div>
   );

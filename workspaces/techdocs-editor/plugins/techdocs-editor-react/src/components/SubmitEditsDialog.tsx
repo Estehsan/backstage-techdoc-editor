@@ -17,21 +17,23 @@
 import { useState } from 'react';
 import {
   Button,
+  ButtonLink,
   Checkbox,
   Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  FormControlLabel,
+  DialogBody,
+  DialogFooter,
+  DialogHeader,
+  FieldLabel,
   Tab,
+  TabList,
+  TabPanel,
   Tabs,
+  Text,
   TextField,
-  Typography,
-  makeStyles,
-} from '@material-ui/core';
-import OpenInNewIcon from '@material-ui/icons/OpenInNew';
-import SaveIcon from '@material-ui/icons/Save';
+} from '@backstage/ui';
+import { RiExternalLinkLine, RiSaveLine } from '@remixicon/react';
 import { EditedFile } from '@estehsaan/backstage-plugin-techdocs-editor-common';
+import styles from './SubmitEditsDialog.module.css';
 
 // ─── Inline line-diff (no extra dependency) ────────────────────────────────
 
@@ -109,85 +111,6 @@ function getHunks(lines: DiffLine[]): DiffLine[][] {
   return hunks;
 }
 
-// ─── Styles ────────────────────────────────────────────────────────────────
-
-const useStyles = makeStyles(theme => ({
-  field: {
-    marginBottom: theme.spacing(2),
-  },
-  changedFiles: {
-    marginBottom: theme.spacing(2),
-  },
-  fileChip: {
-    fontFamily: 'monospace',
-    fontSize: '0.8rem',
-    color: theme.palette.text.secondary,
-  },
-  prLink: {
-    marginTop: theme.spacing(2),
-  },
-  diffContainer: {
-    fontFamily: 'monospace',
-    fontSize: '0.78rem',
-    overflowX: 'auto',
-    backgroundColor:
-      theme.palette.type === 'dark' ? '#1e1e1e' : '#f6f8fa',
-    borderRadius: 4,
-    padding: theme.spacing(1),
-    marginBottom: theme.spacing(2),
-  },
-  diffFileHeader: {
-    fontWeight: 'bold',
-    marginTop: theme.spacing(1),
-    marginBottom: theme.spacing(0.5),
-    color: theme.palette.text.primary,
-    fontSize: '0.8rem',
-    padding: theme.spacing(0.5, 1),
-    backgroundColor:
-      theme.palette.type === 'dark' ? '#2d2d2d' : '#e8ecf0',
-    borderRadius: 2,
-  },
-  hunkSeparator: {
-    color: theme.palette.info.main,
-    padding: '0 8px',
-    lineHeight: '1.6',
-    userSelect: 'none',
-  },
-  lineAdded: {
-    backgroundColor:
-      theme.palette.type === 'dark' ? '#1a3a1a' : '#e6ffec',
-    color: theme.palette.type === 'dark' ? '#7ec878' : '#24292f',
-    display: 'block',
-    padding: '0 8px',
-    whiteSpace: 'pre-wrap',
-    lineHeight: '1.6',
-    '&::before': { content: '"+"', marginRight: 8, color: '#28a745' },
-  },
-  lineRemoved: {
-    backgroundColor:
-      theme.palette.type === 'dark' ? '#3a1a1a' : '#ffebe9',
-    color: theme.palette.type === 'dark' ? '#e07070' : '#24292f',
-    display: 'block',
-    padding: '0 8px',
-    whiteSpace: 'pre-wrap',
-    lineHeight: '1.6',
-    '&::before': { content: '"-"', marginRight: 8, color: '#d1242f' },
-  },
-  lineContext: {
-    display: 'block',
-    padding: '0 8px',
-    whiteSpace: 'pre-wrap',
-    lineHeight: '1.6',
-    color: theme.palette.text.secondary,
-    '&::before': { content: '" "', marginRight: 8 },
-  },
-  noChanges: {
-    color: theme.palette.text.secondary,
-    fontStyle: 'italic',
-    padding: theme.spacing(1),
-  },
-}));
-
 // ─── Component ─────────────────────────────────────────────────────────────
 
 /**
@@ -233,7 +156,6 @@ export function SubmitEditsDialog({
   canSaveLocally,
   canCreatePullRequest,
 }: SubmitEditsDialogProps) {
-  const classes = useStyles();
   const [tab, setTab] = useState<'details' | 'diff'>('details');
   const [prTitle, setPrTitle] = useState(defaultPrTitle);
   const [prDescription, setPrDescription] = useState('');
@@ -289,212 +211,217 @@ export function SubmitEditsDialog({
 
   if (prUrl) {
     return (
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>Pull Request Opened</DialogTitle>
-        <DialogContent>
-          <Typography gutterBottom>
+      <Dialog
+        isOpen={open}
+        onOpenChange={o => {
+          if (!o) handleClose();
+        }}
+        width={600}
+      >
+        <DialogHeader>Pull Request Opened</DialogHeader>
+        <DialogBody>
+          <Text as="div">
             Your changes have been submitted successfully.
-          </Typography>
-          <Button
-            className={classes.prLink}
-            variant="contained"
-            color="primary"
-            endIcon={<OpenInNewIcon />}
+          </Text>
+          <ButtonLink
+            className={styles.prLink}
+            variant="primary"
+            iconEnd={<RiExternalLinkLine size={16} />}
             href={prUrl}
             target="_blank"
             rel="noopener noreferrer"
           >
             View Pull Request
-          </Button>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} color="primary">
+          </ButtonLink>
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="secondary" onPress={handleClose}>
             Close
           </Button>
-        </DialogActions>
+        </DialogFooter>
       </Dialog>
     );
   }
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>
+    <Dialog
+      isOpen={open}
+      onOpenChange={o => {
+        if (!o) handleClose();
+      }}
+      width={900}
+    >
+      <DialogHeader>
         {canSaveLocally && !canCreatePullRequest
           ? 'Save Documentation Edits'
           : 'Submit Documentation Edits'}
-      </DialogTitle>
+      </DialogHeader>
 
       <Tabs
-        value={tab}
-        onChange={(_, v) => setTab(v)}
-        indicatorColor="primary"
-        textColor="primary"
-        style={{ borderBottom: '1px solid rgba(0,0,0,0.12)', paddingLeft: 16 }}
+        selectedKey={tab}
+        onSelectionChange={k => setTab(k as 'details' | 'diff')}
       >
-        <Tab label={`Details (${changedFiles.length} file${changedFiles.length !== 1 ? 's' : ''})`} value="details" />
-        <Tab label="Review Changes" value="diff" />
-      </Tabs>
+        <TabList>
+          <Tab id="details">
+            {`Details (${changedFiles.length} file${
+              changedFiles.length !== 1 ? 's' : ''
+            })`}
+          </Tab>
+          <Tab id="diff">Review Changes</Tab>
+        </TabList>
 
-      <DialogContent>
-        {tab === 'details' && (
-          <>
-            <div className={classes.changedFiles}>
-              <Typography variant="caption" color="textSecondary">
+        <DialogBody>
+          <TabPanel id="details">
+            <div className={styles.changedFiles}>
+              <Text variant="body-x-small" color="secondary" as="div">
                 Changed files ({changedFiles.length}):
-              </Typography>
+              </Text>
               {changedFiles.map(f => (
-                <Typography
-                  key={f.path}
-                  className={classes.fileChip}
-                  display="block"
-                >
+                <Text key={f.path} className={styles.fileChip} as="div">
                   • {f.path}
-                </Typography>
+                </Text>
               ))}
             </div>
 
             {canSaveLocally && !canCreatePullRequest && (
-              <Typography
-                variant="body2"
-                color="textSecondary"
+              <Text
+                variant="body-small"
+                color="secondary"
+                as="div"
                 style={{ marginBottom: 16 }}
               >
                 These changes will be saved directly to the local filesystem. No
                 pull request will be created.
-              </Typography>
+              </Text>
             )}
 
             {canCreatePullRequest && (
               <>
                 <TextField
-                  className={classes.field}
+                  className={styles.field}
                   label="Pull Request Title"
-                  fullWidth
-                  variant="outlined"
-                  size="small"
                   value={prTitle}
-                  onChange={e => setPrTitle(e.target.value)}
-                  required
+                  onChange={setPrTitle}
+                  isRequired
                 />
 
-                <TextField
-                  className={classes.field}
-                  label="Description (optional)"
-                  fullWidth
-                  variant="outlined"
-                  size="small"
-                  multiline
-                  minRows={3}
-                  value={prDescription}
-                  onChange={e => setPrDescription(e.target.value)}
-                  placeholder="What did you change and why?"
-                />
+                <div className={styles.field}>
+                  <FieldLabel
+                    label="Description (optional)"
+                    htmlFor="pr-desc"
+                  />
+                  <textarea
+                    id="pr-desc"
+                    className={styles.textarea}
+                    rows={3}
+                    value={prDescription}
+                    onChange={e => setPrDescription(e.target.value)}
+                    placeholder="What did you change and why?"
+                  />
+                </div>
               </>
             )}
 
             <TextField
-              className={classes.field}
+              className={styles.field}
               label={canCreatePullRequest ? 'Commit Message' : 'Note (optional)'}
-              fullWidth
-              variant="outlined"
-              size="small"
               value={commitMessage}
-              onChange={e => setCommitMessage(e.target.value)}
-              required={canCreatePullRequest}
+              onChange={setCommitMessage}
+              isRequired={canCreatePullRequest}
             />
 
             {canCreatePullRequest && (
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={draft}
-                    onChange={e => setDraft(e.target.checked)}
-                    color="primary"
-                  />
-                }
-                label="Open as draft pull request"
-              />
+              <Checkbox isSelected={draft} onChange={setDraft}>
+                Open as draft pull request
+              </Checkbox>
             )}
 
             {error && (
-              <Typography color="error" variant="body2" style={{ marginTop: 8 }}>
+              <Text
+                color="danger"
+                variant="body-small"
+                as="div"
+                style={{ marginTop: 8 }}
+              >
                 {error}
-              </Typography>
+              </Text>
             )}
-          </>
-        )}
+          </TabPanel>
 
-        {tab === 'diff' && (
-          <div style={{ paddingTop: 8 }}>
-            {changedFiles.length === 0 ? (
-              <Typography className={classes.noChanges}>
-                No changes to show.
-              </Typography>
-            ) : (
-              changedFiles.map(file => {
-                const before = originalContents?.get(file.path) ?? '';
-                const after = file.content ?? '';
-                const isNew = before === '' && file.etag === '';
-                const lines = isNew
-                  ? (after.split('\n').map(t => ({ type: 'added' as const, text: t })))
-                  : computeLineDiff(before, after);
-                const hunks = isNew ? [lines] : getHunks(lines);
+          <TabPanel id="diff">
+            <div style={{ paddingTop: 8 }}>
+              {changedFiles.length === 0 ? (
+                <Text className={styles.noChanges} as="div">
+                  No changes to show.
+                </Text>
+              ) : (
+                changedFiles.map(file => {
+                  const before = originalContents?.get(file.path) ?? '';
+                  const after = file.content ?? '';
+                  const isNew = before === '' && file.etag === '';
+                  const lines = isNew
+                    ? after
+                        .split('\n')
+                        .map(t => ({ type: 'added' as const, text: t }))
+                    : computeLineDiff(before, after);
+                  const hunks = isNew ? [lines] : getHunks(lines);
 
-                return (
-                  <div key={file.path}>
-                    <div className={classes.diffFileHeader}>
-                      {isNew ? '(new file) ' : ''}{file.path}
+                  return (
+                    <div key={file.path}>
+                      <div className={styles.diffFileHeader}>
+                        {isNew ? '(new file) ' : ''}
+                        {file.path}
+                      </div>
+                      <div className={styles.diffContainer}>
+                        {hunks.length === 0 ? (
+                          <span className={styles.noChanges}>
+                            No visible differences (whitespace only?)
+                          </span>
+                        ) : (
+                          hunks.map((hunk, hi) => (
+                            <div key={hi}>
+                              {hi > 0 && (
+                                <span className={styles.hunkSeparator}>
+                                  @@ ... @@
+                                </span>
+                              )}
+                              {hunk.map((line, li) => (
+                                <span
+                                  key={li}
+                                  className={
+                                    line.type === 'added'
+                                      ? styles.lineAdded
+                                      : line.type === 'removed'
+                                      ? styles.lineRemoved
+                                      : styles.lineContext
+                                  }
+                                >
+                                  {line.text}
+                                </span>
+                              ))}
+                            </div>
+                          ))
+                        )}
+                      </div>
                     </div>
-                    <div className={classes.diffContainer}>
-                      {hunks.length === 0 ? (
-                        <span className={classes.noChanges}>
-                          No visible differences (whitespace only?)
-                        </span>
-                      ) : (
-                        hunks.map((hunk, hi) => (
-                          <div key={hi}>
-                            {hi > 0 && (
-                              <span className={classes.hunkSeparator}>
-                                @@ ... @@
-                              </span>
-                            )}
-                            {hunk.map((line, li) => (
-                              <span
-                                key={li}
-                                className={
-                                  line.type === 'added'
-                                    ? classes.lineAdded
-                                    : line.type === 'removed'
-                                    ? classes.lineRemoved
-                                    : classes.lineContext
-                                }
-                              >
-                                {line.text}
-                              </span>
-                            ))}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        )}
-      </DialogContent>
+                  );
+                })
+              )}
+            </div>
+          </TabPanel>
+        </DialogBody>
+      </Tabs>
 
-      <DialogActions>
-        <Button onClick={handleClose} disabled={loading}>
+      <DialogFooter>
+        <Button variant="secondary" onPress={handleClose} isDisabled={loading}>
           Cancel
         </Button>
         {canSaveLocally && (
           <Button
-            onClick={() => handleSubmit('save-locally')}
-            variant={canCreatePullRequest ? 'outlined' : 'contained'}
-            color="primary"
-            disabled={loading}
-            startIcon={<SaveIcon />}
+            onPress={() => handleSubmit('save-locally')}
+            variant={canCreatePullRequest ? 'secondary' : 'primary'}
+            isDisabled={loading}
+            iconStart={<RiSaveLine size={16} />}
           >
             {loading && activeAction === 'save-locally'
               ? 'Saving…'
@@ -503,17 +430,16 @@ export function SubmitEditsDialog({
         )}
         {canCreatePullRequest && (
           <Button
-            onClick={() => handleSubmit('create-pull-request')}
-            variant="contained"
-            color="primary"
-            disabled={loading || !prTitle.trim() || !commitMessage.trim()}
+            onPress={() => handleSubmit('create-pull-request')}
+            variant="primary"
+            isDisabled={loading || !prTitle.trim() || !commitMessage.trim()}
           >
             {loading && activeAction === 'create-pull-request'
               ? 'Submitting…'
               : 'Open Pull Request'}
           </Button>
         )}
-      </DialogActions>
+      </DialogFooter>
     </Dialog>
   );
 }

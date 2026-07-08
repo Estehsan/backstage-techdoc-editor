@@ -75,9 +75,9 @@
     "@backstage/core-plugin-api": "^1.12.3",
     "@backstage/plugin-catalog-react": "^2.1.0",
     "@backstage/plugin-techdocs-common": "^0.1.1",
+    "@backstage/ui": "backstage:^",
     "@estehsaan/backstage-plugin-techdocs-editor-common": "workspace:^",
-    "@material-ui/core": "^4.12.4",
-    "@material-ui/icons": "^4.11.3",
+    "@remixicon/react": "^4.6.0",
     "@toast-ui/editor": "^3.2.2",
     "@toast-ui/react-editor": "^3.2.2"
   },
@@ -94,5 +94,10 @@
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.0.0",
     "react-router-dom": "^6.3.0"
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "\\.(css|less|scss|sss|styl)$": "jest-css-modules"
+    }
   }
 }
