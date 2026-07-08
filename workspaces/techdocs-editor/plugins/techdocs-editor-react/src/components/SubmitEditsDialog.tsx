@@ -33,83 +33,8 @@ import {
 } from '@backstage/ui';
 import { RiExternalLinkLine, RiSaveLine } from '@remixicon/react';
 import { EditedFile } from '@estehsaan/backstage-plugin-techdocs-editor-common';
+import { DiffViewer } from './DiffViewer';
 import styles from './SubmitEditsDialog.module.css';
-
-// ─── Inline line-diff (no extra dependency) ────────────────────────────────
-
-type DiffLine =
-  | { type: 'context'; text: string }
-  | { type: 'added'; text: string }
-  | { type: 'removed'; text: string };
-
-/** Compute a simple line-level diff between `before` and `after`. */
-function computeLineDiff(before: string, after: string): DiffLine[] {
-  const a = before.split('\n');
-  const b = after.split('\n');
-
-  // LCS-based Myers-style diff via DP length table.
-  const m = a.length;
-  const n = b.length;
-  const dp: number[][] = Array.from({ length: m + 1 }, () =>
-    new Array(n + 1).fill(0),
-  );
-  for (let i = m - 1; i >= 0; i--) {
-    for (let j = n - 1; j >= 0; j--) {
-      if (a[i] === b[j]) {
-        dp[i][j] = dp[i + 1][j + 1] + 1;
-      } else {
-        dp[i][j] = Math.max(dp[i + 1][j], dp[i][j + 1]);
-      }
-    }
-  }
-
-  const result: DiffLine[] = [];
-  let i = 0;
-  let j = 0;
-  while (i < m || j < n) {
-    if (i < m && j < n && a[i] === b[j]) {
-      result.push({ type: 'context', text: a[i] });
-      i++;
-      j++;
-    } else if (j < n && (i >= m || dp[i][j + 1] >= dp[i + 1][j])) {
-      result.push({ type: 'added', text: b[j] });
-      j++;
-    } else {
-      result.push({ type: 'removed', text: a[i] });
-      i++;
-    }
-  }
-  return result;
-}
-
-/** Return only the diff hunks (changed lines ± 3 context lines). */
-function getHunks(lines: DiffLine[]): DiffLine[][] {
-  const CONTEXT = 3;
-  const changed = new Set<number>();
-  lines.forEach((l, idx) => {
-    if (l.type !== 'context') {
-      for (let k = Math.max(0, idx - CONTEXT); k <= Math.min(lines.length - 1, idx + CONTEXT); k++) {
-        changed.add(k);
-      }
-    }
-  });
-  if (changed.size === 0) return [];
-
-  const sorted = Array.from(changed).sort((a, b) => a - b);
-  const hunks: DiffLine[][] = [];
-  let hunk: DiffLine[] = [];
-  let prev = -2;
-  for (const idx of sorted) {
-    if (idx !== prev + 1 && hunk.length > 0) {
-      hunks.push(hunk);
-      hunk = [];
-    }
-    hunk.push(lines[idx]);
-    prev = idx;
-  }
-  if (hunk.length > 0) hunks.push(hunk);
-  return hunks;
-}
 
 // ─── Component ─────────────────────────────────────────────────────────────
 
@@ -350,63 +275,10 @@ export function SubmitEditsDialog({
 
           <TabPanel id="diff">
             <div style={{ paddingTop: 8 }}>
-              {changedFiles.length === 0 ? (
-                <Text className={styles.noChanges} as="div">
-                  No changes to show.
-                </Text>
-              ) : (
-                changedFiles.map(file => {
-                  const before = originalContents?.get(file.path) ?? '';
-                  const after = file.content ?? '';
-                  const isNew = before === '' && file.etag === '';
-                  const lines = isNew
-                    ? after
-                        .split('\n')
-                        .map(t => ({ type: 'added' as const, text: t }))
-                    : computeLineDiff(before, after);
-                  const hunks = isNew ? [lines] : getHunks(lines);
-
-                  return (
-                    <div key={file.path}>
-                      <div className={styles.diffFileHeader}>
-                        {isNew ? '(new file) ' : ''}
-                        {file.path}
-                      </div>
-                      <div className={styles.diffContainer}>
-                        {hunks.length === 0 ? (
-                          <span className={styles.noChanges}>
-                            No visible differences (whitespace only?)
-                          </span>
-                        ) : (
-                          hunks.map((hunk, hi) => (
-                            <div key={hi}>
-                              {hi > 0 && (
-                                <span className={styles.hunkSeparator}>
-                                  @@ ... @@
-                                </span>
-                              )}
-                              {hunk.map((line, li) => (
-                                <span
-                                  key={li}
-                                  className={
-                                    line.type === 'added'
-                                      ? styles.lineAdded
-                                      : line.type === 'removed'
-                                      ? styles.lineRemoved
-                                      : styles.lineContext
-                                  }
-                                >
-                                  {line.text}
-                                </span>
-                              ))}
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
+              <DiffViewer
+                changedFiles={changedFiles}
+                originalContents={originalContents}
+              />
             </div>
           </TabPanel>
         </DialogBody>

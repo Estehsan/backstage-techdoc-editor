@@ -24,7 +24,7 @@ import {
   Tooltip,
   TooltipTrigger,
 } from '@backstage/ui';
-import { RiCodeLine, RiEyeLine, RiSaveLine } from '@remixicon/react';
+import { RiCodeLine, RiEyeLine, RiGitPullRequestLine, RiSaveLine } from '@remixicon/react';
 import {
   Progress,
   ResponseErrorPanel,
@@ -44,6 +44,7 @@ import { useTechDocsEditorApi } from '../api';
 import { TechDocsFileTree } from './TechDocsFileTree';
 import { TechDocsMarkdownEditor } from './TechDocsMarkdownEditor';
 import { SubmitEditsDialog } from './SubmitEditsDialog';
+import { ChangesDrawer } from './ChangesDrawer';
 import styles from './TechDocsEditorPage.module.css';
 
 
@@ -106,6 +107,7 @@ export function TechDocsEditorPage({
 
   const [sourceMode, setSourceMode] = useState(true);
   const [submitOpen, setSubmitOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [canSaveLocally, setCanSaveLocally] = useState(false);
   const [canCreatePullRequest, setCanCreatePullRequest] = useState(false);
@@ -335,9 +337,16 @@ export function TechDocsEditorPage({
             </Text>
 
             {dirtyCount > 0 && (
-              <Text className={styles.unsavedBadge} variant="body-x-small">
-                ● {dirtyCount} file{dirtyCount > 1 ? 's' : ''} changed
-              </Text>
+              <TooltipTrigger>
+                <Button
+                  variant="secondary"
+                  iconStart={<RiGitPullRequestLine size={16} />}
+                  onPress={() => setDrawerOpen(true)}
+                >
+                  {dirtyCount} change{dirtyCount !== 1 ? 's' : ''}
+                </Button>
+                <Tooltip>Review all your changes before submitting</Tooltip>
+              </TooltipTrigger>
             )}
 
             <div style={{ marginLeft: 'auto' }}>
@@ -396,6 +405,13 @@ export function TechDocsEditorPage({
           } documentation`}
           canSaveLocally={canSaveLocally}
           canCreatePullRequest={canCreatePullRequest}
+        />
+
+        <ChangesDrawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          changedFiles={Array.from(editedFiles.values())}
+          originalContents={originalContents.current}
         />
 
         {/* Success notification for local saves */}
