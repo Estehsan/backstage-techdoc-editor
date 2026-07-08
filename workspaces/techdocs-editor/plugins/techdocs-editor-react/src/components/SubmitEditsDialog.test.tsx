@@ -7,16 +7,6 @@ import { SubmitEditsDialog } from './SubmitEditsDialog';
 jest.mock('react', () => jest.requireActual('react'));
 jest.mock('react/jsx-runtime', () => jest.requireActual('react/jsx-runtime'));
 
-jest.mock('@material-ui/core', () => ({
-  ...jest.requireActual('@material-ui/core'),
-  makeStyles: () => () => ({
-    field: 'field',
-    changedFiles: 'changedFiles',
-    fileChip: 'fileChip',
-    prLink: 'prLink',
-  }),
-}));
-
 const changedFiles: EditedFile[] = [
   {
     path: 'docs/index.md',
