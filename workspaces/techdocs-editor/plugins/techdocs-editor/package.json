@@ -83,7 +83,7 @@
     "@backstage/plugin-catalog-react": "^2.1.0",
     "@backstage/plugin-techdocs-common": "^0.1.1",
     "@backstage/plugin-techdocs-react": "^1.3.0",
-    "@backstage/ui": "workspace:^",
+    "@backstage/ui": "^0.16.0",
     "@estehsaan/backstage-plugin-techdocs-editor-common": "workspace:^",
     "@estehsaan/backstage-plugin-techdocs-editor-react": "workspace:^",
     "@remixicon/react": "^4.6.0",
@@ -105,8 +105,7 @@
   },
   "jest": {
     "moduleNameMapper": {
-      "\\.(css|less|scss|sss|styl)$": "jest-css-modules",
-      "^@backstage/ui$": "<rootDir>/../../../../../../node_modules/@backstage/ui/src/index.ts"
+      "\\.(css|less|scss|sss|styl)$": "jest-css-modules"
     }
   }
 }
