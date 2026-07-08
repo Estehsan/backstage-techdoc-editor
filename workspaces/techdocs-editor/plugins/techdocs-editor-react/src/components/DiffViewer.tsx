@@ -73,20 +73,17 @@ export function DiffViewer({
                     {hi > 0 && (
                       <span className={styles.hunkSeparator}>@@ ... @@</span>
                     )}
-                    {hunk.map((line, li) => (
-                      <span
-                        key={li}
-                        className={
-                          line.type === 'added'
-                            ? styles.lineAdded
-                            : line.type === 'removed'
-                            ? styles.lineRemoved
-                            : styles.lineContext
-                        }
-                      >
-                        {line.text}
-                      </span>
-                    ))}
+                    {hunk.map((line, li) => {
+                      let lineClass = styles.lineContext;
+                      if (line.type === 'added') lineClass = styles.lineAdded;
+                      else if (line.type === 'removed')
+                        lineClass = styles.lineRemoved;
+                      return (
+                        <span key={li} className={lineClass}>
+                          {line.text}
+                        </span>
+                      );
+                    })}
                   </div>
                 ))
               )}
