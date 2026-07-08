@@ -33,6 +33,9 @@ yarn --cwd packages/backend add @estehsaan/backstage-plugin-techdocs-editor-back
 ```ts
 // packages/backend/src/index.ts
 backend.add(import('@estehsaan/backstage-plugin-techdocs-editor-backend'));
+backend.add(
+  import('@estehsaan/backstage-plugin-techdocs-editor-backend/alpha'),
+);
 ```
 
 ### 2. Install the frontend (New Frontend System — Backstage ≥ 1.30)

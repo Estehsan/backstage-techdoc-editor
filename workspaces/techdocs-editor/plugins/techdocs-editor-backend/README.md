@@ -16,9 +16,12 @@ Add the plugin to `packages/backend/src/index.ts`:
 
 ```ts
 backend.add(import('@estehsaan/backstage-plugin-techdocs-editor-backend'));
+backend.add(
+  import('@estehsaan/backstage-plugin-techdocs-editor-backend/alpha'),
+);
 ```
 
-The default installation bundles built-in GitHub, GitLab, and local filesystem providers. No extra modules are required for those sources.
+The second line registers the built-in GitHub, GitLab, and local filesystem VCS providers. Without it, PR/MR creation will fail with `No VcsProvider for ...`.
 
 ### Adding a custom VCS provider
 

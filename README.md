@@ -36,6 +36,9 @@
 ```ts
 // packages/backend/src/index.ts
 backend.add(import('@estehsaan/backstage-plugin-techdocs-editor-backend'));
+backend.add(
+  import('@estehsaan/backstage-plugin-techdocs-editor-backend/alpha'),
+);
 ```
 
 ### Frontend (New Frontend System)

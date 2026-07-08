@@ -93,6 +93,9 @@ Then add it to your backend in `packages/backend/src/index.ts`:
 
 ```ts
 backend.add(import('@estehsaan/backstage-plugin-techdocs-editor-backend'));
+backend.add(
+  import('@estehsaan/backstage-plugin-techdocs-editor-backend/alpha'),
+);
 backend.add(import('./modules/techdocsEditorModuleMyVcs'));
 ```
 
