@@ -1,0 +1,12 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: estehsaan-backstage-plugin-techdocs-editor
+  title: '@estehsaan/backstage-plugin-techdocs-editor'
+  description: >-
+    Frontend plugin for editing and previewing TechDocs documentation inside
+    Backstage
+spec:
+  lifecycle: experimental
+  type: backstage-frontend-plugin
+  owner: maintainers

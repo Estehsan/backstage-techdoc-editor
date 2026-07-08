@@ -1,0 +1,12 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: estehsaan-backstage-plugin-techdocs-editor-node
+  title: '@estehsaan/backstage-plugin-techdocs-editor-node'
+  description: >-
+    Node library that defines extension points for custom TechDocs editor VCS
+    providers
+spec:
+  lifecycle: experimental
+  type: backstage-node-library
+  owner: maintainers

@@ -1,0 +1,12 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: estehsaan-backstage-plugin-techdocs-editor-common
+  title: '@estehsaan/backstage-plugin-techdocs-editor-common'
+  description: >-
+    Shared types, contracts, and permission definitions for the TechDocs editor
+    plugin
+spec:
+  lifecycle: experimental
+  type: backstage-common-library
+  owner: maintainers

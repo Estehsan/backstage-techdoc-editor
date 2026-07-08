@@ -1,0 +1,12 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: estehsaan-backstage-plugin-techdocs-editor-backend
+  title: '@estehsaan/backstage-plugin-techdocs-editor-backend'
+  description: >-
+    Backend plugin for the TechDocs editor, including VCS integration and pull
+    request publishing
+spec:
+  lifecycle: experimental
+  type: backstage-backend-plugin
+  owner: maintainers

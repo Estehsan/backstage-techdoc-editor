@@ -1,0 +1,12 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: estehsaan-backstage-plugin-techdocs-editor-react
+  title: '@estehsaan/backstage-plugin-techdocs-editor-react'
+  description: >-
+    Shared React components, hooks, and API client for the TechDocs editor
+    plugin
+spec:
+  lifecycle: experimental
+  type: backstage-web-library
+  owner: maintainers
