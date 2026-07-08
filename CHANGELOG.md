@@ -1,3 +1,21 @@
+# [1.4.0](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.3.0...techdocs-editor-v1.4.0) (2026-07-08)
+
+
+### Bug Fixes
+
+* **ci:** fix prettier formatting in 3 files ([d46e6c6](https://github.com/Estehsan/backstage-techdoc-editor/commit/d46e6c6669b67c2fee361113d29dbc326b12fe81))
+* **ci:** use npm semver for @backstage/ui, remove monorepo jest mapper ([fe994ce](https://github.com/Estehsan/backstage-techdoc-editor/commit/fe994ce1765919e70ab5a42aff3f67dcac5e95cf))
+* improve VCS provider setup guidance and docs ([#17](https://github.com/Estehsan/backstage-techdoc-editor/issues/17)) ([2df297c](https://github.com/Estehsan/backstage-techdoc-editor/commit/2df297c1cb833d240f8e9ac80ad339d89929a39b))
+* **techdocs-editor:** QA fixes and changeset for MUI→BUI migration ([da89930](https://github.com/Estehsan/backstage-techdoc-editor/commit/da899306d3535a0f5cfa63d816209024c38d4a15))
+
+
+### Features
+
+* **techdocs-editor-react:** migrate UI components to @backstage/ui and CSS modules ([59451a1](https://github.com/Estehsan/backstage-techdoc-editor/commit/59451a1a4f2cc633a98331b1aae187eaaadc1232))
+* **techdocs-editor:** add Changes drawer with GitHub-style diff history ([a70270f](https://github.com/Estehsan/backstage-techdoc-editor/commit/a70270f2b3ad79c5c186a988e9003eda91d2db25))
+* **techdocs-editor:** fix dir: annotation on remote entities + add diff preview ([#18](https://github.com/Estehsan/backstage-techdoc-editor/issues/18)) ([d83e973](https://github.com/Estehsan/backstage-techdoc-editor/commit/d83e973b4d3bcca7b3270dbc89ddd59b05e6162d))
+* **techdocs-editor:** migrate TechDocsEditorPage and EditPageAddon to @backstage/ui ([ec0804a](https://github.com/Estehsan/backstage-techdoc-editor/commit/ec0804ab38dac0475eed8e1a133ebff48d48e52c))
+
 # [1.3.0](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.2.4...techdocs-editor-v1.3.0) (2026-07-02)
 
 
