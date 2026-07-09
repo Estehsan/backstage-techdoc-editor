@@ -14,6 +14,12 @@ Shared React components, hooks, and the API client for the TechDocs editor plugi
 yarn --cwd packages/app add @estehsaan/backstage-plugin-techdocs-editor-react
 ```
 
+> **Peer dependency:** This package uses [`@backstage/ui`](https://www.npmjs.com/package/@backstage/ui) for its UI components. Backstage ≥ 1.30 includes it automatically. If you are on an older version, install it manually:
+>
+> ```bash
+> yarn --cwd packages/app add @backstage/ui
+> ```
+
 ## Exported Components
 
 ### `TechDocsEditorPage`
@@ -40,19 +46,23 @@ Sidebar file tree listing the docs files for an entity. Highlights files with un
 import { TechDocsFileTree } from '@estehsaan/backstage-plugin-techdocs-editor-react';
 
 <TechDocsFileTree
-  files={files}
-  selectedFile={selectedFile}
-  dirtyFiles={dirtyFiles}
-  onSelect={file => setSelectedFile(file)}
+  nodes={nodes}
+  selectedPath={selectedPath}
+  dirtyPaths={dirtyPaths}
+  onSelect={path => setSelectedPath(path)}
+  onCreateFile={path => handleNewFile(path)}
 />;
 ```
 
-| Prop           | Type                     | Required | Description                            |
-| -------------- | ------------------------ | -------- | -------------------------------------- |
-| `files`        | `DocTreeNode[]`          | Yes      | File tree returned by the backend      |
-| `selectedFile` | `string \| undefined`    | No       | Currently selected file path           |
-| `dirtyFiles`   | `Set<string>`            | No       | Set of file paths with unsaved changes |
-| `onSelect`     | `(path: string) => void` | Yes      | Called when a file is clicked          |
+| Prop           | Type                         | Required | Description                                      |
+| -------------- | ---------------------------- | -------- | ------------------------------------------------ |
+| `nodes`        | `DocTreeNode[]`              | Yes      | File tree returned by `getFileTree`              |
+| `selectedPath` | `string \| undefined`        | No       | Currently selected file path                     |
+| `dirtyPaths`   | `Set<string>`                | No       | Set of file paths with unsaved changes           |
+| `onSelect`     | `(path: string) => void`     | Yes      | Called when a file is clicked                    |
+| `onCreateFile` | `(path: string) => void`     | No       | Called when the user creates a new page          |
+| `branch`       | `string`                     | No       | Branch the docs were loaded from (shown in empty state) |
+| `docsDir`      | `string`                     | No       | Resolved docs directory (shown in empty state)   |
 
 ### `TechDocsMarkdownEditor`
 
