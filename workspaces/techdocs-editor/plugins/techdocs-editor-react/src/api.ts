@@ -46,7 +46,13 @@ export interface TechDocsEditorApi {
     entityRef: CompoundEntityRef,
     path: string,
     branch?: string,
-  ): Promise<{ content: string; etag: string; branch: string }>;
+  ): Promise<{
+    content: string;
+    encoding?: 'utf8' | 'base64';
+    mimeType?: string;
+    etag: string;
+    branch: string;
+  }>;
   submitEdits(
     entityRef: CompoundEntityRef,
     request: SubmitEditsRequest,
@@ -129,7 +135,13 @@ export class TechDocsEditorClient implements TechDocsEditorApi {
     entityRef: CompoundEntityRef,
     path: string,
     branch?: string,
-  ): Promise<{ content: string; etag: string; branch: string }> {
+  ): Promise<{
+    content: string;
+    encoding?: 'utf8' | 'base64';
+    mimeType?: string;
+    etag: string;
+    branch: string;
+  }> {
     const base = await this.baseUrl();
     const params = new URLSearchParams({ path });
     if (branch) params.set('branch', branch);

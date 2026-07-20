@@ -35,20 +35,17 @@ const mockGetTree = jest.fn();
 
 jest.mock('octokit', () => ({
   Octokit: class MockOctokit {
-    static plugin() {
-      return class ExtendedOctokit {
-        rest = {
-          git: { getRef: mockGetRef, getTree: mockGetTree },
-          repos: { get: jest.fn(), getContent: jest.fn() },
-        };
-        createPullRequest = jest.fn();
-      };
-    }
+    rest = {
+      git: { getRef: mockGetRef, getTree: mockGetTree, createRef: jest.fn() },
+      repos: {
+        get: jest.fn(),
+        getContent: jest.fn(),
+        createOrUpdateFileContents: jest.fn(),
+        deleteFile: jest.fn(),
+      },
+      pulls: { create: jest.fn() },
+    };
   },
-}));
-
-jest.mock('octokit-plugin-create-pull-request', () => ({
-  createPullRequest: jest.fn(),
 }));
 
 function buildProvider() {

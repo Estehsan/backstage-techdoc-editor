@@ -24,6 +24,21 @@ import {
 } from '@estehsaan/backstage-plugin-techdocs-editor-node';
 import { Gitlab } from '@gitbeaker/rest';
 
+const IMAGE_MIME_TYPES: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
+};
+
+function getImageMimeType(filePath: string): string | undefined {
+  const dot = filePath.lastIndexOf('.');
+  const ext = dot >= 0 ? filePath.slice(dot).toLowerCase() : '';
+  return IMAGE_MIME_TYPES[ext];
+}
+
 /** @public */
 export class GitLabVcsProvider implements VcsProvider {
   readonly id = 'gitlab';
@@ -79,7 +94,12 @@ export class GitLabVcsProvider implements VcsProvider {
     repoUrl: string;
     ref: string;
     filePath: string;
-  }): Promise<{ content: string; etag: string }> {
+  }): Promise<{
+    content: string;
+    encoding?: 'utf8' | 'base64';
+    mimeType?: string;
+    etag: string;
+  }> {
     const client = this.getClient(opts.repoUrl);
     const projectPath = this.getProjectPath(opts.repoUrl);
 
@@ -89,8 +109,20 @@ export class GitLabVcsProvider implements VcsProvider {
         opts.filePath,
         opts.ref,
       );
-      const content = Buffer.from(file.content, 'base64').toString('utf-8');
-      return { content, etag: file.blob_id };
+      const mimeType = getImageMimeType(opts.filePath);
+      if (mimeType) {
+        return {
+          content: file.content,
+          encoding: 'base64',
+          mimeType,
+          etag: file.blob_id,
+        };
+      }
+      return {
+        content: Buffer.from(file.content, 'base64').toString('utf-8'),
+        encoding: 'utf8',
+        etag: file.blob_id,
+      };
     } catch (err: any) {
       if (
         err.status === 404 ||
@@ -155,8 +187,8 @@ export class GitLabVcsProvider implements VcsProvider {
     }
 
     const actions: any[] = [];
-    for (const [filePath, content] of opts.files) {
-      if (content === null) {
+    for (const [filePath, file] of opts.files) {
+      if (file === null) {
         actions.push({ action: 'delete', file_path: filePath });
       } else {
         let fileExists = false;
@@ -170,11 +202,12 @@ export class GitLabVcsProvider implements VcsProvider {
         } catch {
           // New file
         }
+        const encoding = file.encoding ?? 'utf8';
         actions.push({
           action: fileExists ? 'update' : 'create',
           file_path: filePath,
-          content,
-          encoding: 'text',
+          content: file.content,
+          encoding: encoding === 'base64' ? 'base64' : 'text',
         });
       }
     }

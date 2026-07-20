@@ -12,7 +12,7 @@ export type OpenPrOptions = {
   baseBranch: string;
   title: string;
   description?: string;
-  files: Map<string, string | null>;
+  files: Map<string, VcsWriteFile | null>;
   commitMessage: string;
   authorName: string;
   authorEmail: string;
@@ -32,6 +32,8 @@ export const techdocsEditorVcsProviderExtensionPoint: ExtensionPoint<VcsProvider
 // @public
 export type VcsFileResult = {
   content: string;
+  encoding?: 'utf8' | 'base64';
+  mimeType?: string;
   etag: string;
 };
 
@@ -58,4 +60,11 @@ export interface VcsProviderExtensionPoint {
   // (undocumented)
   addProvider(provider: VcsProvider): void;
 }
+
+// @public
+export type VcsWriteFile = {
+  content: string;
+  encoding?: 'utf8' | 'base64';
+  mimeType?: string;
+};
 ```

@@ -29,8 +29,8 @@ export type OpenPrOptions = {
   title: string;
   /** PR / MR description body (markdown) */
   description?: string;
-  /** Map of file path → new content (null = delete file) */
-  files: Map<string, string | null>;
+  /** Map of file path → new content payload (null = delete file) */
+  files: Map<string, VcsWriteFile | null>;
   commitMessage: string;
   /** Git author display name */
   authorName: string;
@@ -60,8 +60,25 @@ export type OpenPrResult = {
 export type VcsFileResult = {
   /** Raw file content */
   content: string;
+  /** Encoding used for the returned content payload. */
+  encoding?: 'utf8' | 'base64';
+  /** MIME type for binary payloads. */
+  mimeType?: string;
   /** Commit SHA or HTTP ETag for conflict detection */
   etag: string;
+};
+
+/**
+ * Content payload for file writes.
+ * @public
+ */
+export type VcsWriteFile = {
+  /** File content payload */
+  content: string;
+  /** Encoding used by `content` */
+  encoding?: 'utf8' | 'base64';
+  /** MIME type for binary payloads */
+  mimeType?: string;
 };
 
 /**

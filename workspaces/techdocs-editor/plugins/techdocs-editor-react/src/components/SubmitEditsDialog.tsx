@@ -17,6 +17,7 @@
 import { useState } from 'react';
 import {
   Button,
+  ButtonIcon,
   ButtonLink,
   Checkbox,
   Dialog,
@@ -30,9 +31,19 @@ import {
   Tabs,
   Text,
   TextField,
+  TooltipTrigger,
+  Tooltip,
 } from '@backstage/ui';
-import { RiExternalLinkLine, RiSaveLine } from '@remixicon/react';
-import { EditedFile } from '@estehsaan/backstage-plugin-techdocs-editor-common';
+import {
+  RiCheckLine,
+  RiExternalLinkLine,
+  RiFileCopyLine,
+  RiSaveLine,
+} from '@remixicon/react';
+import {
+  EditedFile,
+  SubmitEditsResponse,
+} from '@estehsaan/backstage-plugin-techdocs-editor-common';
 import { DiffViewer } from './DiffViewer';
 import styles from './SubmitEditsDialog.module.css';
 
@@ -51,14 +62,18 @@ export type SubmitEditsDialogProps = {
   originalContents?: Map<string, string>;
   /** Called when the user dismisses the dialog without submitting. */
   onClose: () => void;
-  /** Called when the user confirms a save or pull request submission. */
+  /**
+   * Called when the user confirms a save or pull request submission.
+   * The resolved response is used to show the "Pull Request Opened"
+   * confirmation in-place — the caller should not navigate away on success.
+   */
   onSubmit: (opts: {
     action: 'save-locally' | 'create-pull-request';
     prTitle: string;
     prDescription: string;
     commitMessage: string;
     draft: boolean;
-  }) => Promise<void>;
+  }) => Promise<SubmitEditsResponse | void>;
   defaultPrTitle?: string;
   /** Whether this entity's source supports saving directly to the local filesystem. */
   canSaveLocally: boolean;
@@ -93,6 +108,7 @@ export function SubmitEditsDialog({
     'save-locally' | 'create-pull-request' | null
   >(null);
   const [prUrl, setPrUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (
@@ -104,13 +120,19 @@ export function SubmitEditsDialog({
     setActiveAction(action);
     setError(null);
     try {
-      await onSubmit({
+      const result = await onSubmit({
         action,
         prTitle,
         prDescription,
         commitMessage,
         draft,
       });
+      if (result?.pullRequestUrl) {
+        // Keep the dialog open and show the confirmation panel with the
+        // link instead of navigating away — the caller must not open the
+        // PR in a new tab itself.
+        setPrUrl(result.pullRequestUrl);
+      }
     } catch (err: any) {
       if (err.status === 409 && err.conflicts) {
         setError(
@@ -129,9 +151,22 @@ export function SubmitEditsDialog({
 
   const handleClose = () => {
     setPrUrl(null);
+    setCopied(false);
     setError(null);
     setTab('details');
     onClose();
+  };
+
+  const handleCopyLink = async () => {
+    if (!prUrl) return;
+    try {
+      await navigator.clipboard.writeText(prUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard access can be denied by the browser; the link is still
+      // visible and selectable, so this is a non-fatal no-op.
+    }
   };
 
   if (prUrl) {
@@ -146,6 +181,28 @@ export function SubmitEditsDialog({
         <DialogHeader>Pull Request Opened</DialogHeader>
         <DialogBody>
           <Text as="div">Your changes have been submitted successfully.</Text>
+          <div className={styles.prLinkRow}>
+            <TextField
+              className={styles.prLinkField}
+              aria-label="Pull request link"
+              value={prUrl}
+              isReadOnly
+            />
+            <TooltipTrigger>
+              <ButtonIcon
+                aria-label="Copy pull request link"
+                icon={
+                  copied ? (
+                    <RiCheckLine size={16} />
+                  ) : (
+                    <RiFileCopyLine size={16} />
+                  )
+                }
+                onPress={handleCopyLink}
+              />
+              <Tooltip>{copied ? 'Copied!' : 'Copy link'}</Tooltip>
+            </TooltipTrigger>
+          </div>
           <ButtonLink
             className={styles.prLink}
             variant="primary"

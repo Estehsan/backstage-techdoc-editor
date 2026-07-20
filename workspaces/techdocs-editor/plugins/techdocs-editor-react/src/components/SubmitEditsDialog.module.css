@@ -50,6 +50,17 @@
   margin-top: var(--bui-space-4);
 }
 
+.prLinkRow {
+  display: flex;
+  align-items: center;
+  gap: var(--bui-space-2);
+  margin-top: var(--bui-space-4);
+}
+
+.prLinkField {
+  flex: 1;
+}
+
 .diffContainer {
   font-family: monospace;
   font-size: 0.78rem;

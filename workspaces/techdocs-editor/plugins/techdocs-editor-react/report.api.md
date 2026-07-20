@@ -22,6 +22,7 @@ export function SubmitEditsDialog(input: SubmitEditsDialogProps): JSX_2.Element;
 export type SubmitEditsDialogProps = {
   open: boolean;
   changedFiles: EditedFile[];
+  originalContents?: Map<string, string>;
   onClose: () => void;
   onSubmit: (opts: {
     action: 'save-locally' | 'create-pull-request';
@@ -29,7 +30,7 @@ export type SubmitEditsDialogProps = {
     prDescription: string;
     commitMessage: string;
     draft: boolean;
-  }) => Promise<void>;
+  }) => Promise<SubmitEditsResponse | void>;
   defaultPrTitle?: string;
   canSaveLocally: boolean;
   canCreatePullRequest: boolean;
@@ -44,6 +45,8 @@ export interface TechDocsEditorApi {
     branch?: string,
   ): Promise<{
     content: string;
+    encoding?: 'utf8' | 'base64';
+    mimeType?: string;
     etag: string;
     branch: string;
   }>;
@@ -78,6 +81,8 @@ export class TechDocsEditorClient implements TechDocsEditorApi {
     branch?: string,
   ): Promise<{
     content: string;
+    encoding?: 'utf8' | 'base64';
+    mimeType?: string;
     etag: string;
     branch: string;
   }>;
@@ -135,6 +140,23 @@ export type TechDocsMarkdownEditorProps = {
   initialContent: string;
   onChange: (markdown: string) => void;
   sourceMode?: boolean;
+  onUploadImage?: (file: File) => Promise<{
+    url: string;
+    altText: string;
+  }>;
+  resolveImageSrc?: (destination: string) => string;
+};
+
+// @public
+export function TechDocsMediaPreview(
+  input: TechDocsMediaPreviewProps,
+): JSX_2.Element;
+
+// @public
+export type TechDocsMediaPreviewProps = {
+  path: string;
+  content: string;
+  mimeType?: string;
 };
 
 // @public (undocumented)

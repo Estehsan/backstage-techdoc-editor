@@ -9,6 +9,8 @@ import { BasicPermission } from '@backstage/plugin-permission-common';
 export type DocFile = {
   path: string;
   content: string;
+  encoding?: 'utf8' | 'base64';
+  mimeType?: string;
   etag: string;
 };
 
@@ -29,6 +31,8 @@ export type DocTreeNode = {
 export type EditedFile = {
   path: string;
   content: string | null;
+  encoding?: 'utf8' | 'base64';
+  mimeType?: string;
   etag: string;
 };
 

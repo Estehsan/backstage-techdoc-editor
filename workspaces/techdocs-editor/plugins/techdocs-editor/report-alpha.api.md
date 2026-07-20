@@ -32,12 +32,11 @@ export const techdocsEditorExtensionPage: OverridableExtensionDefinition<{
     title: string | undefined;
   };
   configInput: {
-    path?: string | undefined;
     title?: string | undefined;
+    path?: string | undefined;
   };
   output:
     | ExtensionDataRef<string, 'core.routing.path', {}>
-    | ExtensionDataRef<JSX_2.Element, 'core.reactElement', {}>
     | ExtensionDataRef<
         RouteRef<AnyRouteRefParams>,
         'core.routing.ref',
@@ -45,6 +44,7 @@ export const techdocsEditorExtensionPage: OverridableExtensionDefinition<{
           optional: true;
         }
       >
+    | ExtensionDataRef<JSX_2.Element, 'core.reactElement', {}>
     | ExtensionDataRef<
         string,
         'core.title',

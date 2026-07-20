@@ -26,9 +26,11 @@ import {
 } from '@backstage/ui';
 import {
   RiCodeLine,
+  RiDeleteBinLine,
   RiEyeLine,
   RiGitPullRequestLine,
   RiSaveLine,
+  RiUpload2Line,
 } from '@remixicon/react';
 import {
   Progress,
@@ -48,9 +50,20 @@ import {
 import { useTechDocsEditorApi } from '../api';
 import { TechDocsFileTree } from './TechDocsFileTree';
 import { TechDocsMarkdownEditor } from './TechDocsMarkdownEditor';
+import { TechDocsMediaPreview } from './TechDocsMediaPreview';
 import { SubmitEditsDialog } from './SubmitEditsDialog';
 import { ChangesDrawer } from './ChangesDrawer';
 import styles from './TechDocsEditorPage.module.css';
+
+const SUPPORTED_IMAGE_EXTENSIONS = new Set([
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.gif',
+  '.svg',
+  '.webp',
+]);
+const MAX_IMAGE_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 /**
  * Props for {@link TechDocsEditorPage}.
@@ -85,9 +98,9 @@ export function TechDocsEditorPage({
   const [selectedPath, setSelectedPath] = useState<string | undefined>(
     initialPath,
   );
-  const [fileContent, setFileContent] = useState<string>('');
   const [fileLoading, setFileLoading] = useState(false);
   const [fileError, setFileError] = useState<Error | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const [editedFiles, setEditedFiles] = useState<Map<string, EditedFile>>(
     new Map(),
@@ -108,13 +121,52 @@ export function TechDocsEditorPage({
   // simply opening a file never silently marks it dirty and pulls it into
   // the next submission.
   const originalContents = useRef<Map<string, string>>(new Map());
+  // Reactive counterpart of `originalContents`/`originalEtags`, keyed by
+  // path. This is intentionally *state* (not just a ref) so that the
+  // pristine content for `selectedPath` can be derived synchronously in the
+  // same render where `selectedPath` changes — see `fileContent` below.
+  //
+  // IMPORTANT: `fileContent`/`fileMimeType` used to be their own `useState`,
+  // set from inside a `useEffect` keyed on `selectedPath`. Toast UI's React
+  // wrapper only reads `initialContent` once, at mount — it never re-applies
+  // it on prop updates. Because effects run *after* the render that changes
+  // `selectedPath` (and the `key` on `TechDocsMarkdownEditor`) commits, the
+  // freshly (re)mounted editor was capturing whatever `fileContent` still
+  // held from the *previously* selected file (e.g. a just-uploaded image's
+  // base64 payload) as its `initialContent`, and never corrected itself once
+  // the effect later set the right value. Toast UI's own mount-time
+  // re-serialization then fired `onChange` with that stale content, which
+  // got staged as a "real" edit — corrupting the document. Deriving content
+  // synchronously from state already available in the same render (below)
+  // eliminates that race.
+  const [pristineFiles, setPristineFiles] = useState<
+    Map<string, { content: string; mimeType?: string; etag: string }>
+  >(new Map());
+  // Paths of referenced images we've already attempted to fetch for preview
+  // purposes (successfully or not), so the effect below never refetches the
+  // same missing/broken image on every render.
+  const imageFetchAttempted = useRef<Set<string>>(new Set());
 
   const [sourceMode, setSourceMode] = useState(true);
+  // Bumped whenever an image is inserted into the *currently open* markdown
+  // doc via its own toolbar upload (as opposed to switching to a different
+  // file). Toast UI's React wrapper only reads `customHTMLRenderer` (which
+  // `resolveImageSrc` feeds into, for turning an image's relative path into
+  // a previewable `src`) once, at mount — it never re-applies it while the
+  // component stays mounted, same as `initialContent`. Without this, an
+  // image inserted through the toolbar renders with whatever
+  // `resolveImageSrc` closure existed *before* the upload (which doesn't
+  // know about the image yet) and shows a broken-image icon until the user
+  // navigates away and back, which force-remounts the editor. Including
+  // this counter in the editor's `key` forces that same remount immediately
+  // after an upload, so the new image resolves right away.
+  const [editorRemountToken, setEditorRemountToken] = useState(0);
   const [submitOpen, setSubmitOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [canSaveLocally, setCanSaveLocally] = useState(false);
   const [canCreatePullRequest, setCanCreatePullRequest] = useState(false);
+  const replaceImageInputRef = useRef<HTMLInputElement | null>(null);
 
   const requestEntityRef = useMemo(
     () => ({
@@ -148,27 +200,138 @@ export function TechDocsEditorPage({
       .finally(() => setLoading(false));
   }, [api, requestEntityRef, initialPath]);
 
+  // Fetches pristine content for `selectedPath` when it isn't already
+  // available (neither staged in `editedFiles` nor previously fetched into
+  // `pristineFiles`). Both of those are checked synchronously at render time
+  // below when deriving `fileContent`, so this effect only needs to handle
+  // the "not loaded yet" case — it must never be the sole source of content
+  // for a freshly (re)mounted editor, since editors only read their initial
+  // content once, at mount.
   useEffect(() => {
     if (!selectedPath || !branch) return;
-
-    const edited = editedFilesRef.current.get(selectedPath);
-    if (edited) {
-      setFileContent(edited.content ?? '');
-      return;
-    }
+    if (editedFilesRef.current.has(selectedPath)) return;
+    if (pristineFiles.has(selectedPath)) return;
 
     setFileLoading(true);
     setFileError(null);
     api
       .getFile(requestEntityRef, selectedPath, branch)
-      .then(({ content, etag }) => {
-        setFileContent(content);
+      .then(({ content, mimeType, etag }) => {
         originalEtags.current.set(selectedPath, etag);
         originalContents.current.set(selectedPath, content);
+        setPristineFiles(prev =>
+          new Map(prev).set(selectedPath, { content, mimeType, etag }),
+        );
       })
       .catch(e => setFileError(e))
       .finally(() => setFileLoading(false));
-  }, [api, requestEntityRef, selectedPath, branch]);
+  }, [api, requestEntityRef, selectedPath, branch, pristineFiles]);
+
+  // Content for the currently selected path, derived synchronously from
+  // state that's already up to date in the same render as `selectedPath`
+  // (unlike the old approach of copying it into its own state from inside
+  // an effect, which lagged a render behind and caused stale content to be
+  // used as a freshly mounted editor's initial value — see the comment on
+  // `pristineFiles` above).
+  const activeEditedFile = selectedPath
+    ? editedFiles.get(selectedPath)
+    : undefined;
+  const pristineFile = selectedPath
+    ? pristineFiles.get(selectedPath)
+    : undefined;
+  const fileContent = activeEditedFile
+    ? (activeEditedFile.content ?? '')
+    : (pristineFile?.content ?? '');
+  const fileMimeType = activeEditedFile
+    ? activeEditedFile.mimeType
+    : pristineFile?.mimeType;
+  // Whether we actually have *some* content loaded for `selectedPath` yet
+  // (either staged or fetched). Gates rendering the editor/preview so they
+  // never mount with another path's leftover content.
+  const contentReady = Boolean(activeEditedFile || pristineFile);
+  const isSelectedImage = Boolean(selectedPath) && isImagePath(selectedPath!);
+
+  // Doc-relative paths of every image referenced (via markdown image syntax)
+  // by the currently open markdown file, resolved from their as-written
+  // (possibly relative) destinations. Used both to preload their content for
+  // preview and to gate mounting the editor until previews can resolve.
+  const referencedImagePaths = useMemo(() => {
+    if (!selectedPath || isSelectedImage || !contentReady) return [];
+    const paths = new Set<string>();
+    for (const destination of extractImageDestinations(fileContent)) {
+      const resolved = resolveImageDestination(selectedPath, destination);
+      if (resolved) paths.add(resolved);
+    }
+    return Array.from(paths);
+  }, [selectedPath, isSelectedImage, contentReady, fileContent]);
+
+  // Toast UI Editor is uncontrolled — like `initialContent`, any image `src`
+  // it renders at mount time is never revisited later, even if the actual
+  // image content only becomes available afterwards (see the comment on
+  // `pristineFiles` above for the general pattern this follows). So rather
+  // than patching image elements after the fact, we hold off mounting the
+  // editor until every referenced image's content is already resolvable —
+  // exactly like `contentReady` does for the document's own content.
+  useEffect(() => {
+    if (referencedImagePaths.length === 0 || !branch) return;
+    const missing = referencedImagePaths.filter(
+      path =>
+        !editedFilesRef.current.has(path) &&
+        !pristineFiles.has(path) &&
+        !imageFetchAttempted.current.has(path),
+    );
+    if (missing.length === 0) return;
+
+    missing.forEach(path => imageFetchAttempted.current.add(path));
+    missing.forEach(path => {
+      api
+        .getFile(requestEntityRef, path, branch)
+        .then(({ content, mimeType, etag }) => {
+          setPristineFiles(prev =>
+            new Map(prev).set(path, { content, mimeType, etag }),
+          );
+        })
+        .catch(() => {
+          // Referenced image doesn't exist (or can't be loaded) — leave it
+          // unresolved. `resolveImageSrc` falls back to the original
+          // (likely broken) destination in that case, same as before this
+          // preview-resolution feature existed; it does not block the rest
+          // of the document from rendering.
+        });
+    });
+  }, [api, requestEntityRef, branch, referencedImagePaths, pristineFiles]);
+
+  const imagesReady = referencedImagePaths.every(
+    path =>
+      editedFilesRef.current.has(path) ||
+      pristineFiles.has(path) ||
+      imageFetchAttempted.current.has(path),
+  );
+
+  /**
+   * Resolves a markdown image `destination` (as written in the doc) to a
+   * previewable `src` — a `data:` URI built from staged or fetched content
+   * when available, or the original destination unchanged if not (e.g.
+   * external URLs, or images that failed to resolve).
+   */
+  const resolveImageSrc = useCallback(
+    (destination: string): string => {
+      if (!selectedPath) return destination;
+      const resolvedPath = resolveImageDestination(selectedPath, destination);
+      if (!resolvedPath) return destination;
+
+      const staged = editedFiles.get(resolvedPath);
+      const fetched = pristineFiles.get(resolvedPath);
+      const content = staged ? staged.content : fetched?.content;
+      const mimeType = staged ? staged.mimeType : fetched?.mimeType;
+      if (!content) return destination;
+
+      return `data:${
+        mimeType ?? inferImageMimeType(resolvedPath)
+      };base64,${content}`;
+    },
+    [selectedPath, editedFiles, pristineFiles],
+  );
 
   const handleContentChange = useCallback(
     (markdown: string) => {
@@ -184,7 +347,12 @@ export function TechDocsEditorPage({
           return next;
         }
         const etag = originalEtags.current.get(selectedPath) ?? '';
-        next.set(selectedPath, { path: selectedPath, content: markdown, etag });
+        next.set(selectedPath, {
+          path: selectedPath,
+          content: markdown,
+          encoding: 'utf8',
+          etag,
+        });
         return next;
       });
       setDirtyPaths(prev => {
@@ -210,6 +378,7 @@ export function TechDocsEditorPage({
       next.set(relativePath, {
         path: relativePath,
         content: initialContent,
+        encoding: 'utf8',
         etag: '',
       });
       return next;
@@ -222,8 +391,136 @@ export function TechDocsEditorPage({
       return buildTree(allPaths);
     });
     setSelectedPath(relativePath);
-    setFileContent(initialContent);
   }, []);
+
+  const stageImageFile = useCallback(
+    async (file: File, targetPath: string) => {
+      setUploadError(null);
+
+      const ext = getFileExtension(file.name);
+      if (!SUPPORTED_IMAGE_EXTENSIONS.has(ext)) {
+        throw new Error(
+          'Only PNG, JPG, JPEG, GIF, SVG, and WEBP are supported.',
+        );
+      }
+      if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
+        throw new Error('Image exceeds the 10MB upload limit.');
+      }
+      if (!isSafeDocPath(file.name)) {
+        throw new Error(
+          'File name contains unsupported characters. Use letters, numbers, dots, hyphens, or underscores.',
+        );
+      }
+
+      const base64Content = await fileToBase64(file);
+
+      let etag = originalEtags.current.get(targetPath) ?? '';
+      if (!etag && treeNodes.length > 0 && hasPath(treeNodes, targetPath)) {
+        try {
+          const existing = await api.getFile(
+            requestEntityRef,
+            targetPath,
+            branch,
+          );
+          etag = existing.etag;
+          originalEtags.current.set(targetPath, existing.etag);
+          originalContents.current.set(targetPath, existing.content);
+        } catch {
+          etag = '';
+        }
+      }
+
+      setEditedFiles(prev => {
+        const next = new Map(prev);
+        next.set(targetPath, {
+          path: targetPath,
+          content: base64Content,
+          encoding: 'base64',
+          mimeType: file.type || undefined,
+          etag,
+        });
+        return next;
+      });
+      setDirtyPaths(prev =>
+        prev.has(targetPath) ? prev : new Set(prev).add(targetPath),
+      );
+      setTreeNodes(prev => {
+        if (hasPath(prev, targetPath)) {
+          return prev;
+        }
+        const allPaths = collectPaths(prev).concat(targetPath);
+        return buildTree(allPaths);
+      });
+
+      return {
+        targetPath,
+        base64Content,
+        mimeType: file.type || undefined,
+      };
+    },
+    [api, branch, requestEntityRef, treeNodes],
+  );
+
+  const handleReplaceImage = useCallback(async () => {
+    const input = replaceImageInputRef.current;
+    const file = input?.files?.[0];
+    if (!file || !selectedPath) {
+      return;
+    }
+    input.value = '';
+
+    const targetPath = joinDirectoryAndFile(
+      directoryOfPath(selectedPath),
+      file.name,
+    );
+    const uploaded = await stageImageFile(file, targetPath);
+    setSelectedPath(uploaded.targetPath);
+  }, [selectedPath, stageImageFile]);
+
+  const uploadImageForCurrentDoc = useCallback(
+    async (file: File) => {
+      if (!selectedPath || isImagePath(selectedPath)) {
+        throw new Error('Select a markdown file before inserting an image.');
+      }
+      const targetPath = joinDirectoryAndFile(
+        directoryOfPath(selectedPath),
+        file.name,
+      );
+      const uploaded = await stageImageFile(file, targetPath);
+      const relativePath = toRelativeMarkdownPath(
+        selectedPath,
+        uploaded.targetPath,
+      );
+      const altText = file.name.replace(/\.[^.]+$/, '');
+      // Force the editor to remount once this resolves (see the comment on
+      // `editorRemountToken` above) so the image it's about to insert
+      // renders correctly right away instead of as a broken icon.
+      setEditorRemountToken(t => t + 1);
+      return { url: relativePath, altText };
+    },
+    [selectedPath, stageImageFile],
+  );
+
+  const handleDeleteImage = useCallback(() => {
+    if (!selectedPath || !isImagePath(selectedPath)) {
+      return;
+    }
+    const etag = originalEtags.current.get(selectedPath) ?? '';
+    setEditedFiles(prev => {
+      const next = new Map(prev);
+      next.set(selectedPath, {
+        path: selectedPath,
+        content: null,
+        encoding: 'base64',
+        mimeType: fileMimeType,
+        etag,
+      });
+      return next;
+    });
+    setDirtyPaths(prev =>
+      prev.has(selectedPath) ? prev : new Set(prev).add(selectedPath),
+    );
+  }, [fileMimeType, selectedPath]);
 
   const handleSubmit = async (opts: {
     action: 'save-locally' | 'create-pull-request';
@@ -241,22 +538,46 @@ export function TechDocsEditorPage({
       commitMessage: opts.commitMessage,
       draft: opts.draft,
     });
+    // The just-submitted content becomes the new pristine baseline so the
+    // editor/preview keep showing it (rather than reverting to whatever was
+    // cached before these edits) once `editedFiles` is cleared below.
+    setPristineFiles(prev => {
+      const next = new Map(prev);
+      for (const file of files) {
+        if (file.content === null) {
+          next.delete(file.path);
+          originalContents.current.delete(file.path);
+          continue;
+        }
+        next.set(file.path, {
+          content: file.content,
+          mimeType: file.mimeType,
+          etag: file.etag,
+        });
+        originalContents.current.set(file.path, file.content);
+      }
+      return next;
+    });
     setEditedFiles(new Map());
     setDirtyPaths(new Set());
-    setSubmitOpen(false);
 
-    // Handle different response types
     if (result.savedLocally) {
-      // Show success message for local saves
+      // Local saves close the dialog and show a toast; there's no PR link
+      // to keep the dialog open for.
+      setSubmitOpen(false);
       const count = result.savedCount ?? files.length;
       setSuccessMessage(`Saved ${count} file${count !== 1 ? 's' : ''} to disk`);
-    } else if (result.pullRequestUrl) {
-      // Open PR URL for VCS saves
-      window.open(result.pullRequestUrl, '_blank', 'noopener,noreferrer');
     }
+    // For PR submissions, leave the dialog open — SubmitEditsDialog shows
+    // its own "Pull Request Opened" confirmation with the link once this
+    // promise resolves with `result`, instead of navigating away.
+    return result;
   };
 
   const dirtyCount = dirtyPaths.size;
+  const isSelectedImageStagedDelete = selectedPath
+    ? editedFiles.get(selectedPath)?.content === null && isSelectedImage
+    : false;
 
   // Auto-hide the success toast after 6 seconds (replaces MUI Snackbar's
   // autoHideDuration, which BUI's Alert has no equivalent for).
@@ -343,6 +664,40 @@ export function TechDocsEditorPage({
               Branch: <strong>{branch}</strong>
             </Text>
 
+            {selectedPath && isSelectedImage && (
+              <>
+                <input
+                  ref={replaceImageInputRef}
+                  type="file"
+                  accept=".png,.jpg,.jpeg,.gif,.svg,.webp,image/png,image/jpeg,image/gif,image/svg+xml,image/webp"
+                  className={styles.hiddenInput}
+                  onChange={() => {
+                    handleReplaceImage().catch((e: unknown) => {
+                      setUploadError(
+                        e instanceof Error
+                          ? e.message
+                          : 'Failed to upload image file.',
+                      );
+                    });
+                  }}
+                />
+                <Button
+                  variant="secondary"
+                  iconStart={<RiUpload2Line size={16} />}
+                  onPress={() => replaceImageInputRef.current?.click()}
+                >
+                  Replace Image
+                </Button>
+                <Button
+                  variant="secondary"
+                  iconStart={<RiDeleteBinLine size={16} />}
+                  onPress={handleDeleteImage}
+                >
+                  Remove Image
+                </Button>
+              </>
+            )}
+
             {dirtyCount > 0 && (
               <TooltipTrigger>
                 <Button
@@ -378,25 +733,58 @@ export function TechDocsEditorPage({
             {fileTree}
 
             <div className={styles.editorArea}>
-              {fileLoading && (
-                <div className={styles.noFileSelected}>
-                  <Text color="secondary">Loading…</Text>
-                </div>
-              )}
+              {selectedPath &&
+                !fileError &&
+                (!contentReady || (!isSelectedImage && !imagesReady)) && (
+                  <div className={styles.noFileSelected}>
+                    <Text color="secondary">Loading…</Text>
+                  </div>
+                )}
               {fileError && <ResponseErrorPanel error={fileError} />}
+              {uploadError && (
+                <Alert
+                  status="danger"
+                  title={uploadError}
+                  className={styles.toast}
+                />
+              )}
               {!selectedPath && !fileLoading && (
                 <div className={styles.noFileSelected}>
                   <Text color="secondary">Select a file to edit</Text>
                 </div>
               )}
-              {selectedPath && !fileLoading && !fileError && (
-                <TechDocsMarkdownEditor
-                  key={selectedPath}
-                  initialContent={fileContent}
-                  onChange={handleContentChange}
-                  sourceMode={sourceMode}
-                />
-              )}
+              {selectedPath &&
+                contentReady &&
+                (isSelectedImage || imagesReady) &&
+                !fileError &&
+                isSelectedImageStagedDelete && (
+                  <div className={styles.noFileSelected}>
+                    <Text color="secondary">
+                      This image is staged for deletion.
+                    </Text>
+                  </div>
+                )}
+              {selectedPath &&
+                contentReady &&
+                (isSelectedImage || imagesReady) &&
+                !fileError &&
+                !isSelectedImageStagedDelete &&
+                (isSelectedImage ? (
+                  <TechDocsMediaPreview
+                    path={selectedPath}
+                    content={fileContent}
+                    mimeType={fileMimeType}
+                  />
+                ) : (
+                  <TechDocsMarkdownEditor
+                    key={`${selectedPath}::${editorRemountToken}`}
+                    initialContent={fileContent}
+                    onChange={handleContentChange}
+                    sourceMode={sourceMode}
+                    onUploadImage={uploadImageForCurrentDoc}
+                    resolveImageSrc={resolveImageSrc}
+                  />
+                ))}
             </div>
           </div>
         </div>
@@ -475,4 +863,125 @@ function collectPaths(nodes: DocTreeNode[]): string[] {
     if (node.children) paths.push(...collectPaths(node.children));
   }
   return paths;
+}
+
+function getFileExtension(filePath: string): string {
+  const dot = filePath.lastIndexOf('.');
+  return dot >= 0 ? filePath.slice(dot).toLowerCase() : '';
+}
+
+function isImagePath(filePath: string): boolean {
+  return SUPPORTED_IMAGE_EXTENSIONS.has(getFileExtension(filePath));
+}
+
+const IMAGE_MIME_TYPES_BY_EXTENSION: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
+};
+
+/** Best-effort MIME type for a path, used as a fallback for data URIs when
+ * the backend/staged upload didn't record one. */
+function inferImageMimeType(filePath: string): string {
+  return (
+    IMAGE_MIME_TYPES_BY_EXTENSION[getFileExtension(filePath)] ??
+    'application/octet-stream'
+  );
+}
+
+function directoryOfPath(filePath: string): string {
+  const slash = filePath.lastIndexOf('/');
+  return slash >= 0 ? filePath.slice(0, slash) : '';
+}
+
+function joinDirectoryAndFile(directory: string, fileName: string): string {
+  return directory ? `${directory}/${fileName}` : fileName;
+}
+
+function toRelativeMarkdownPath(
+  fromFilePath: string,
+  toFilePath: string,
+): string {
+  const fromParts = directoryOfPath(fromFilePath).split('/').filter(Boolean);
+  const toParts = toFilePath.split('/').filter(Boolean);
+
+  let common = 0;
+  while (
+    common < fromParts.length &&
+    common < toParts.length &&
+    fromParts[common] === toParts[common]
+  ) {
+    common++;
+  }
+
+  const upSegments = new Array(fromParts.length - common).fill('..');
+  const downSegments = toParts.slice(common);
+  const joined = [...upSegments, ...downSegments].join('/');
+  return joined.startsWith('.') ? joined : `./${joined}`;
+}
+
+function hasPath(nodes: DocTreeNode[], targetPath: string): boolean {
+  return collectPaths(nodes).includes(targetPath);
+}
+
+function isSafeDocPath(value: string): boolean {
+  return /^[a-zA-Z0-9_.-]+$/.test(value);
+}
+
+const MARKDOWN_IMAGE_PATTERN = /!\[[^\]]*\]\(\s*([^)\s]+)(?:\s+"[^"]*")?\s*\)/g;
+
+/** Extracts every image `destination` referenced via markdown image syntax. */
+function extractImageDestinations(markdown: string): string[] {
+  const destinations: string[] = [];
+  for (const match of markdown.matchAll(MARKDOWN_IMAGE_PATTERN)) {
+    if (match[1]) destinations.push(match[1]);
+  }
+  return destinations;
+}
+
+/**
+ * Resolves a markdown image `destination` (as written in a doc) to the
+ * doc-relative repo path it points at, so its actual (possibly staged)
+ * content can be looked up for preview purposes. Returns `undefined` for
+ * destinations that are already absolute (external URLs, data URIs,
+ * protocol-relative) since those don't need resolving.
+ */
+function resolveImageDestination(
+  fromFilePath: string,
+  destination: string,
+): string | undefined {
+  if (/^([a-z][a-z0-9+.-]*:)?\/\//i.test(destination)) return undefined;
+  if (destination.startsWith('data:')) return undefined;
+
+  const relative = destination.startsWith('/')
+    ? destination.slice(1)
+    : destination;
+  const baseDir = destination.startsWith('/')
+    ? []
+    : directoryOfPath(fromFilePath).split('/').filter(Boolean);
+
+  const stack = [...baseDir];
+  for (const part of relative.split('/').filter(Boolean)) {
+    if (part === '.') continue;
+    if (part === '..') stack.pop();
+    else stack.push(part);
+  }
+  return stack.join('/');
+}
+
+async function fileToBase64(file: File): Promise<string> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ''));
+    reader.onerror = () => reject(new Error('Unable to read file for upload.'));
+    reader.readAsDataURL(file);
+  });
+  const comma = dataUrl.indexOf(',');
+  if (comma < 0) {
+    throw new Error('Invalid image data payload.');
+  }
+  return dataUrl.slice(comma + 1);
 }

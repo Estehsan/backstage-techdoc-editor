@@ -23,6 +23,10 @@ export type DocFile = {
   path: string;
   /** Raw markdown content */
   content: string;
+  /** Encoding used for the file content payload. */
+  encoding?: 'utf8' | 'base64';
+  /** MIME type for binary media payloads. */
+  mimeType?: string;
   /** Source ETag (commit SHA or HTTP ETag) for conflict detection */
   etag: string;
 };
@@ -77,6 +81,10 @@ export type EditedFile = {
   path: string;
   /** New content. null means delete the file. */
   content: string | null;
+  /** Encoding used by `content` when not null. */
+  encoding?: 'utf8' | 'base64';
+  /** MIME type for media files. */
+  mimeType?: string;
   /** ETag of the version the user was editing — used for conflict detection */
   etag: string;
 };

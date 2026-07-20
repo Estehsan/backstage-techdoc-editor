@@ -48,6 +48,21 @@ export function DiffViewer({
   return (
     <div className={compact ? styles.compactRoot : undefined}>
       {changedFiles.map(file => {
+        if (file.encoding === 'base64') {
+          return (
+            <div key={file.path} className={styles.fileBlock}>
+              <div className={styles.diffFileHeader}>
+                <span className={styles.filePath}>{file.path}</span>
+              </div>
+              <div className={styles.diffContainer}>
+                <span className={styles.noChanges}>
+                  Binary file changed (preview not shown in diff).
+                </span>
+              </div>
+            </div>
+          );
+        }
+
         const before = originalContents?.get(file.path) ?? '';
         const after = file.content ?? '';
         const isNew = before === '' && file.etag === '';
