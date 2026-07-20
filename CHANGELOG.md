@@ -1,3 +1,20 @@
+# [2.0.0](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.4.0...techdocs-editor-v2.0.0) (2026-07-20)
+
+
+### Features
+
+* **techdocs-editor:** add media file support and fix image preview bugs ([#21](https://github.com/Estehsan/backstage-techdoc-editor/issues/21)) ([968cc86](https://github.com/Estehsan/backstage-techdoc-editor/commit/968cc860d9cb9ed5a370ccf8b1ae111b27d4ef3c))
+
+
+### BREAKING CHANGES
+
+* **techdocs-editor:** OpenPrOptions.files in techdocs-editor-node now maps to
+VcsWriteFile | null instead of string | null, to carry encoding/mimeType
+metadata needed for binary media files. Custom VcsProvider implementers
+must update their file-writing logic accordingly.
+
+Signed-off-by: Estehsan <estehsaan@gmail.com>
+
 # [1.4.0](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.3.0...techdocs-editor-v1.4.0) (2026-07-08)
 
 

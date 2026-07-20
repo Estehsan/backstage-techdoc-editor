@@ -1,6 +1,6 @@
 {
   "name": "@estehsaan/backstage-plugin-techdocs-editor",
-  "version": "1.4.0",
+  "version": "2.0.0",
   "description": "Frontend plugin for editing and previewing TechDocs documentation inside Backstage",
   "backstage": {
     "role": "frontend-plugin",
