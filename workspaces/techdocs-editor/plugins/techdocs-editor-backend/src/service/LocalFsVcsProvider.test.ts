@@ -65,5 +65,22 @@ describe('LocalFsVcsProvider', () => {
 
       expect(files).toEqual([]);
     });
+
+    describe('readFile', () => {
+      it('returns image files as base64 payloads', async () => {
+        const pngBytes = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+        await fs.writeFile(path.join(tmpDir, 'logo.png'), pngBytes);
+
+        const file = await provider.readFile({
+          repoUrl: `file://${tmpDir}`,
+          ref: 'local',
+          filePath: 'logo.png',
+        });
+
+        expect(file.encoding).toBe('base64');
+        expect(file.mimeType).toBe('image/png');
+        expect(file.content).toBe(pngBytes.toString('base64'));
+      });
+    });
   });
 });

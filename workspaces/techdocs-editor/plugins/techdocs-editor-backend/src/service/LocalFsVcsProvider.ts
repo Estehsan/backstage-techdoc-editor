@@ -25,6 +25,19 @@ import {
 } from '@estehsaan/backstage-plugin-techdocs-editor-node';
 import { NotFoundError, InputError } from '@backstage/errors';
 
+const IMAGE_MIME_TYPES: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
+};
+
+function getImageMimeType(filePath: string): string | undefined {
+  return IMAGE_MIME_TYPES[path.extname(filePath).toLowerCase()];
+}
+
 /**
  * VcsProvider implementation for local filesystem documentation.
  * Handles file:// URLs and writes changes directly to disk.
@@ -55,7 +68,8 @@ export class LocalFsVcsProvider implements VcsProvider {
     this.assertWithinBase(fullPath, basePath);
 
     try {
-      const content = await fs.readFile(fullPath, 'utf-8');
+      const mimeType = getImageMimeType(opts.filePath);
+      const bytes = await fs.readFile(fullPath);
       const stat = await fs.stat(fullPath);
       // Use mtime + size as etag for conflict detection
       const etag = crypto
@@ -63,7 +77,15 @@ export class LocalFsVcsProvider implements VcsProvider {
         .update(`${stat.mtimeMs}-${stat.size}`)
         .digest('hex')
         .slice(0, 16);
-      return { content, etag };
+      if (mimeType) {
+        return {
+          content: bytes.toString('base64'),
+          encoding: 'base64',
+          mimeType,
+          etag,
+        };
+      }
+      return { content: bytes.toString('utf-8'), encoding: 'utf8', etag };
     } catch (err: unknown) {
       if (
         err &&
@@ -111,19 +133,24 @@ export class LocalFsVcsProvider implements VcsProvider {
 
     // Write each file directly to disk
     let savedCount = 0;
-    for (const [filePath, content] of opts.files) {
+    for (const [filePath, file] of opts.files) {
       const fullPath = path.join(basePath, filePath);
 
       // Security check: ensure path doesn't escape basePath
       this.assertWithinBase(fullPath, basePath);
 
-      if (content === null) {
+      if (file === null) {
         // Delete file — ignore if it doesn't exist
         await fs.unlink(fullPath).catch(() => {});
       } else {
         // Ensure parent directory exists
         await fs.mkdir(path.dirname(fullPath), { recursive: true });
-        await fs.writeFile(fullPath, content, 'utf-8');
+        const encoding = file.encoding ?? 'utf8';
+        if (encoding === 'base64') {
+          await fs.writeFile(fullPath, Buffer.from(file.content, 'base64'));
+        } else {
+          await fs.writeFile(fullPath, file.content, 'utf-8');
+        }
       }
       savedCount++;
     }

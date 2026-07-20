@@ -48,6 +48,8 @@ import {
 } from './sourceResolver';
 import { VcsProvider } from '@estehsaan/backstage-plugin-techdocs-editor-node';
 
+const MAX_IMAGE_UPLOAD_BYTES = 10 * 1024 * 1024;
+
 /**
  * Validates that a file path supplied by the client is relative, contains only
  * safe characters, and cannot escape the docs directory via path traversal.
@@ -174,7 +176,11 @@ export async function createRouter(
     const registeredProviders = providerRegistry.all().map(p => p.id);
     throw new InputError(
       `No VcsProvider for ${repoUrl}. ` +
-        `Registered providers: ${registeredProviders.length > 0 ? registeredProviders.join(', ') : 'none'}. ` +
+        `Registered providers: ${
+          registeredProviders.length > 0
+            ? registeredProviders.join(', ')
+            : 'none'
+        }. ` +
         `If you use built-in providers, add backend.add(import('@estehsaan/backstage-plugin-techdocs-editor-backend/alpha')) to your backend startup.`,
     );
   }
@@ -293,7 +299,9 @@ export async function createRouter(
       if (files.length === 0) {
         logger.warn(
           `No documentation files found for ${kind}:${namespace}/${name} ` +
-            `(source=${source.local ? 'local' : 'vcs'}, branch=${branch}, docsDir='${resolvedDocsDir}', repo=${repoUrl}). ` +
+            `(source=${
+              source.local ? 'local' : 'vcs'
+            }, branch=${branch}, docsDir='${resolvedDocsDir}', repo=${repoUrl}). ` +
             `Verify the entity's 'backstage.io/techdocs-ref' annotation and that the docs directory exists.`,
         );
       }
@@ -370,13 +378,20 @@ export async function createRouter(
 
       const fullPath = `${resolvedDocsDir}/${filePath}`;
 
-      const { content, etag } = await provider.readFile({
+      const result = await provider.readFile({
         repoUrl,
         ref: branch,
         filePath: fullPath,
       });
 
-      res.json({ content, etag, path: filePath, branch });
+      res.json({
+        content: result.content,
+        encoding: result.encoding,
+        mimeType: result.mimeType,
+        etag: result.etag,
+        path: filePath,
+        branch,
+      });
     },
   );
 
@@ -408,6 +423,17 @@ export async function createRouter(
           throw new InputError('Each file must have a path.');
         }
         assertSafeDocPath(file.path);
+        if (file.content === null) {
+          continue;
+        }
+        if (file.encoding === 'base64') {
+          const payloadBytes = Buffer.byteLength(file.content, 'base64');
+          if (payloadBytes > MAX_IMAGE_UPLOAD_BYTES) {
+            throw new InputError(
+              `File ${file.path} exceeds the 10MB upload limit.`,
+            );
+          }
+        }
       }
 
       const { entity, docEntity, credentials } = await loadEntity(
@@ -516,9 +542,25 @@ export async function createRouter(
       const headBranch = `techdocs-editor/${userLogin}/${timestamp}-${randomSuffix}`;
 
       // Build file map
-      const files = new Map<string, string | null>();
+      const files = new Map<
+        string,
+        {
+          content: string;
+          encoding?: 'utf8' | 'base64';
+          mimeType?: string;
+        } | null
+      >();
       for (const file of body.files) {
-        files.set(`${resolvedDocsDir}/${file.path}`, file.content);
+        files.set(
+          `${resolvedDocsDir}/${file.path}`,
+          file.content === null
+            ? null
+            : {
+                content: file.content,
+                encoding: file.encoding,
+                mimeType: file.mimeType,
+              },
+        );
       }
 
       const authorName =

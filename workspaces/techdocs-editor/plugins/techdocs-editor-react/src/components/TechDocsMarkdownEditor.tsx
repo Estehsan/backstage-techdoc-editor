@@ -33,6 +33,24 @@ export type TechDocsMarkdownEditorProps = {
   onChange: (markdown: string) => void;
   /** If true, show source markdown mode; false = WYSIWYG */
   sourceMode?: boolean;
+  /**
+   * Called when the user picks an image via Toast UI's built-in image
+   * toolbar button. Should stage/upload the file and resolve with the URL
+   * (typically a relative markdown path) and alt text to insert. If omitted,
+   * Toast UI falls back to embedding the raw file as a data URI.
+   */
+  onUploadImage?: (file: File) => Promise<{ url: string; altText: string }>;
+  /**
+   * Resolves an image's markdown `destination` (as written in the doc, e.g.
+   * a relative path like `./diagram.png`) to a `src` usable for preview —
+   * typically a `data:` URI built from the image's actual (possibly staged)
+   * content. Relative paths on their own don't resolve to anything in the
+   * editor's page, so without this every inserted/existing image would show
+   * as a broken-image icon. Falls back to the original destination
+   * unchanged if omitted or if it returns the input unresolved (e.g. for
+   * external URLs).
+   */
+  resolveImageSrc?: (destination: string) => string;
 };
 
 /**
@@ -44,6 +62,8 @@ export function TechDocsMarkdownEditor({
   initialContent,
   onChange,
   sourceMode = false,
+  onUploadImage,
+  resolveImageSrc,
 }: TechDocsMarkdownEditorProps) {
   const editorRef = useRef<any>(null);
   const [EditorComponent, setEditorComponent] = useState<any>(null);
@@ -109,9 +129,63 @@ export function TechDocsMarkdownEditor({
           ['heading', 'bold', 'italic', 'strike'],
           ['hr', 'quote'],
           ['ul', 'ol', 'task', 'indent', 'outdent'],
-          ['table', 'link'],
+          ['table', 'link', 'image'],
           ['code', 'codeblock'],
         ]}
+        customHTMLRenderer={{
+          // Images are written to markdown as relative paths (e.g.
+          // `./diagram.png`), which is correct for the saved document, but
+          // doesn't resolve to anything on the editor's own page — without
+          // this override every image (existing or newly inserted) would
+          // render as a broken-image icon. `resolveImageSrc` swaps in a
+          // `data:` URI built from the image's actual content when one is
+          // available, leaving the destination untouched otherwise (e.g.
+          // external URLs).
+          image: (node: any, context: any) => {
+            const { destination, title } = node;
+            context.skipChildren();
+            const src = resolveImageSrc
+              ? resolveImageSrc(destination)
+              : destination;
+            return {
+              type: 'openTag',
+              tagName: 'img',
+              selfClose: true,
+              attributes: {
+                src,
+                alt: context.getChildrenText(node),
+                ...(title ? { title } : {}),
+              },
+            };
+          },
+        }}
+        hooks={{
+          // Route Toast UI's own "insert image" toolbar button through the
+          // app's upload pipeline via `onUploadImage`, instead of letting it
+          // fall back to embedding the raw file as an inline base64 data
+          // URI (which isn't persisted by the backend and gets
+          // lost/corrupted the next time this file is opened).
+          //
+          // IMPORTANT: Toast UI still performs its own default data-URI
+          // embed *in addition to* calling this hook unless the hook
+          // explicitly returns `false`. Without that, both insertions race:
+          // the real (relative-path) image link from `onUploadImage`, and a
+          // giant raw base64 payload from Toast UI's default handling —
+          // which is what was corrupting documents on revisit.
+          addImageBlobHook: (
+            blob: Blob,
+            callback: (url: string, altText: string) => void,
+          ) => {
+            if (!onUploadImage) return false;
+            onUploadImage(blob as File)
+              .then(({ url, altText }) => callback(url, altText))
+              .catch(() => {
+                // Swallow the error here; TechDocsEditorPage surfaces upload
+                // failures via its own error state.
+              });
+            return false;
+          },
+        }}
       />
     </div>
   );

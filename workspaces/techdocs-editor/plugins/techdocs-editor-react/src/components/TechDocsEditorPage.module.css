@@ -73,6 +73,10 @@
   font-weight: 700;
 }
 
+.hiddenInput {
+  display: none;
+}
+
 .toast {
   position: fixed;
   bottom: var(--bui-space-6);

@@ -170,4 +170,42 @@ describe('SubmitEditsDialog', () => {
       ).toBeInTheDocument(),
     );
   });
+
+  it('shows the pull request confirmation panel with a copyable link', async () => {
+    const writeText = jest.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+
+    const onSubmit = jest
+      .fn()
+      .mockResolvedValue({ pullRequestUrl: 'https://example.com/pr/42' });
+
+    await renderInTestApp(
+      <SubmitEditsDialog
+        open
+        changedFiles={changedFiles}
+        onClose={jest.fn()}
+        onSubmit={onSubmit}
+        canSaveLocally={false}
+        canCreatePullRequest
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open Pull Request' }));
+
+    await screen.findByText('Pull Request Opened');
+    expect(
+      screen.getByRole('link', { name: /view pull request/i }),
+    ).toHaveAttribute('href', 'https://example.com/pr/42');
+    expect(
+      screen.getByDisplayValue('https://example.com/pr/42'),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Copy pull request link' }),
+    );
+
+    await waitFor(() =>
+      expect(writeText).toHaveBeenCalledWith('https://example.com/pr/42'),
+    );
+  });
 });

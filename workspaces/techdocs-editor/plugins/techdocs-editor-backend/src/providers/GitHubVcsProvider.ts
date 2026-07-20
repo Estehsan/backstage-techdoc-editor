@@ -25,11 +25,24 @@ import {
   VcsProvider,
   OpenPrOptions,
   OpenPrResult,
+  VcsWriteFile,
 } from '@estehsaan/backstage-plugin-techdocs-editor-node';
 import { Octokit } from 'octokit';
-import { createPullRequest } from 'octokit-plugin-create-pull-request';
 
-const OctokitWithPR = Octokit.plugin(createPullRequest as any);
+const IMAGE_MIME_TYPES: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
+};
+
+function getImageMimeType(filePath: string): string | undefined {
+  const dot = filePath.lastIndexOf('.');
+  const ext = dot >= 0 ? filePath.slice(dot).toLowerCase() : '';
+  return IMAGE_MIME_TYPES[ext];
+}
 
 /**
  * Directory-tree paths that should never be surfaced as documentation files,
@@ -69,9 +82,7 @@ export class GitHubVcsProvider implements VcsProvider {
     }
   }
 
-  private async getOctokit(
-    repoUrl: string,
-  ): Promise<InstanceType<typeof OctokitWithPR>> {
+  private async getOctokit(repoUrl: string): Promise<Octokit> {
     const credentials = await this.credentialsProvider.getCredentials({
       url: repoUrl,
     });
@@ -84,7 +95,7 @@ export class GitHubVcsProvider implements VcsProvider {
           `Ensure a GitHub integration with a token is configured in app-config.yaml.`,
       );
     }
-    return new OctokitWithPR({
+    return new Octokit({
       auth,
       baseUrl: this.baseApiUrl,
     });
@@ -110,7 +121,12 @@ export class GitHubVcsProvider implements VcsProvider {
     repoUrl: string;
     ref: string;
     filePath: string;
-  }): Promise<{ content: string; etag: string }> {
+  }): Promise<{
+    content: string;
+    encoding?: 'utf8' | 'base64';
+    mimeType?: string;
+    etag: string;
+  }> {
     const octokit = await this.getOctokit(opts.repoUrl);
     const { owner, repo } = this.parseRepo(opts.repoUrl);
 
@@ -142,9 +158,18 @@ export class GitHubVcsProvider implements VcsProvider {
       );
     }
 
+    const mimeType = getImageMimeType(opts.filePath);
+    if (mimeType) {
+      return {
+        content: data.content,
+        encoding: 'base64',
+        mimeType,
+        etag: data.sha,
+      };
+    }
     const content = Buffer.from(data.content, 'base64').toString('utf-8');
     const etag = data.sha;
-    return { content, etag };
+    return { content, encoding: 'utf8', etag };
   }
 
   async listFiles(opts: {
@@ -187,12 +212,58 @@ export class GitHubVcsProvider implements VcsProvider {
     const octokit = await this.getOctokit(opts.repoUrl);
     const { owner, repo } = this.parseRepo(opts.repoUrl);
 
-    const changes: Record<string, { content: string } | null> = {};
-    for (const [path, content] of opts.files) {
-      changes[path] = content !== null ? { content } : null;
+    const { data: baseRef } = await octokit.rest.git.getRef({
+      owner,
+      repo,
+      ref: `heads/${opts.baseBranch}`,
+    });
+
+    try {
+      await octokit.rest.git.createRef({
+        owner,
+        repo,
+        ref: `refs/heads/${opts.headBranch}`,
+        sha: baseRef.object.sha,
+      });
+    } catch (err: any) {
+      const message = String(err?.message ?? '');
+      const alreadyExists =
+        err?.status === 422 &&
+        message.toLowerCase().includes('reference already exists');
+      if (!alreadyExists) {
+        throw err;
+      }
     }
 
-    const pr = await (octokit as any).createPullRequest({
+    for (const [filePath, file] of opts.files) {
+      if (file === null) {
+        await this.deleteFileIfExists({
+          octokit,
+          owner,
+          repo,
+          branch: opts.headBranch,
+          filePath,
+          message: opts.commitMessage,
+          authorName: opts.authorName,
+          authorEmail: opts.authorEmail,
+        });
+        continue;
+      }
+
+      await this.createOrUpdateFile({
+        octokit,
+        owner,
+        repo,
+        branch: opts.headBranch,
+        filePath,
+        file,
+        message: opts.commitMessage,
+        authorName: opts.authorName,
+        authorEmail: opts.authorEmail,
+      });
+    }
+
+    const pr = await octokit.rest.pulls.create({
       owner,
       repo,
       title: opts.title,
@@ -200,15 +271,9 @@ export class GitHubVcsProvider implements VcsProvider {
       base: opts.baseBranch,
       head: opts.headBranch,
       draft: opts.draft ?? false,
-      changes: [
-        {
-          files: changes,
-          commit: opts.commitMessage,
-        },
-      ],
     });
 
-    if (!pr?.data) {
+    if (!pr.data) {
       throw new Error('Failed to create GitHub pull request');
     }
 
@@ -216,5 +281,118 @@ export class GitHubVcsProvider implements VcsProvider {
       url: pr.data.html_url,
       number: pr.data.number,
     };
+  }
+
+  private encodeFileContent(file: VcsWriteFile): string {
+    const encoding = file.encoding ?? 'utf8';
+    if (encoding === 'base64') {
+      return file.content;
+    }
+    return Buffer.from(file.content, 'utf-8').toString('base64');
+  }
+
+  private async readFileSha(opts: {
+    octokit: Octokit;
+    owner: string;
+    repo: string;
+    branch: string;
+    filePath: string;
+  }): Promise<string | undefined> {
+    try {
+      const response = await opts.octokit.rest.repos.getContent({
+        owner: opts.owner,
+        repo: opts.repo,
+        path: opts.filePath,
+        ref: opts.branch,
+      });
+      const data: any = response.data;
+      if (Array.isArray(data)) {
+        return undefined;
+      }
+      return data.sha;
+    } catch (err: any) {
+      if (err?.status === 404) {
+        return undefined;
+      }
+      throw err;
+    }
+  }
+
+  private async createOrUpdateFile(opts: {
+    octokit: Octokit;
+    owner: string;
+    repo: string;
+    branch: string;
+    filePath: string;
+    file: VcsWriteFile;
+    message: string;
+    authorName: string;
+    authorEmail: string;
+  }): Promise<void> {
+    const sha = await this.readFileSha({
+      octokit: opts.octokit,
+      owner: opts.owner,
+      repo: opts.repo,
+      branch: opts.branch,
+      filePath: opts.filePath,
+    });
+
+    await opts.octokit.rest.repos.createOrUpdateFileContents({
+      owner: opts.owner,
+      repo: opts.repo,
+      path: opts.filePath,
+      branch: opts.branch,
+      message: opts.message,
+      content: this.encodeFileContent(opts.file),
+      ...(sha ? { sha } : {}),
+      committer: {
+        name: opts.authorName,
+        email: opts.authorEmail,
+      },
+      author: {
+        name: opts.authorName,
+        email: opts.authorEmail,
+      },
+    });
+  }
+
+  private async deleteFileIfExists(opts: {
+    octokit: Octokit;
+    owner: string;
+    repo: string;
+    branch: string;
+    filePath: string;
+    message: string;
+    authorName: string;
+    authorEmail: string;
+  }): Promise<void> {
+    const sha = await this.readFileSha({
+      octokit: opts.octokit,
+      owner: opts.owner,
+      repo: opts.repo,
+      branch: opts.branch,
+      filePath: opts.filePath,
+    });
+
+    if (!sha) {
+      return;
+    }
+
+    await opts.octokit.rest.repos.deleteFile({
+      owner: opts.owner,
+      repo: opts.repo,
+      path: opts.filePath,
+      branch: opts.branch,
+      message: opts.message,
+      sha,
+      committer: {
+        name: opts.authorName,
+        email: opts.authorEmail,
+      },
+      author: {
+        name: opts.authorName,
+        email: opts.authorEmail,
+      },
+    });
   }
 }

@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-/**
- * Node-side utilities for the TechDocs editor plugin.
- *
- * @packageDocumentation
- */
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  overflow: auto;
+  padding: var(--bui-space-4);
+  background: var(--bui-bg);
+}
 
-export { techdocsEditorVcsProviderExtensionPoint } from './extensionPoint';
-export type {
-  VcsProvider,
-  VcsProviderExtensionPoint,
-  OpenPrOptions,
-  OpenPrResult,
-  VcsFileResult,
-  VcsWriteFile,
-} from './types';
+.image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border: 1px solid var(--bui-border-1);
+  border-radius: var(--bui-radius-2);
+}

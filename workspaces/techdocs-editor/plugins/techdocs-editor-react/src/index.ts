@@ -26,6 +26,8 @@ export { TechDocsFileTree } from './components/TechDocsFileTree';
 export type { TechDocsFileTreeProps } from './components/TechDocsFileTree';
 export { TechDocsMarkdownEditor } from './components/TechDocsMarkdownEditor';
 export type { TechDocsMarkdownEditorProps } from './components/TechDocsMarkdownEditor';
+export { TechDocsMediaPreview } from './components/TechDocsMediaPreview';
+export type { TechDocsMediaPreviewProps } from './components/TechDocsMediaPreview';
 export { SubmitEditsDialog } from './components/SubmitEditsDialog';
 export type { SubmitEditsDialogProps } from './components/SubmitEditsDialog';
 export {
