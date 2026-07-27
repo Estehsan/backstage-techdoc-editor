@@ -161,7 +161,6 @@ async function buildAppWithRegistry(
   });
 
   const app = express();
-  app.use(express.json());
   app.use(router);
   app.use(backstageErrorHandler());
 
@@ -368,5 +367,29 @@ describe('POST /submissions/:namespace/:kind/:name', () => {
       });
 
     expect(response.status).toBe(400);
+  });
+
+  it('accepts submission payloads larger than 100kb for media-heavy edits', async () => {
+    const { app, localSourceDir } = await buildApp({
+      entityAnnotations: { 'backstage.io/techdocs-ref': 'dir:.' },
+    });
+    localSourceDirs.push(localSourceDir);
+
+    const response = await request(app)
+      .post('/submissions/default/component/test')
+      .send({
+        files: [
+          {
+            path: 'large.md',
+            content: `# Large\n\n${'a'.repeat(150_000)}`,
+            etag: '',
+          },
+        ],
+        commitMessage: 'Submit large docs edit',
+        action: 'save-locally',
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.savedLocally).toBe(true);
   });
 });

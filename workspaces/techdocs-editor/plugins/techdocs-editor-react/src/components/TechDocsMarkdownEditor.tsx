@@ -110,6 +110,11 @@ export function TechDocsMarkdownEditor({
     return <div className={styles.editorWrapper}>Loading editor…</div>;
   }
 
+  // Adding toastui-editor-dark to our wrapper div makes it an ancestor of
+  // all Toast UI internal elements — the dark CSS uses descendant selectors
+  // like `.toastui-editor-dark .ProseMirror { color: #e8e8e8 }`, so placing
+  // the class here is equivalent to the official `theme="dark"` prop but
+  // also responds to live theme changes without remounting the editor.
   return (
     <div className={styles.editorWrapper}>
       <EditorComponent
