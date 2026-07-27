@@ -36,8 +36,11 @@ import {
 } from '@backstage/ui';
 import {
   RiCheckLine,
+  RiCheckboxCircleLine,
   RiExternalLinkLine,
   RiFileCopyLine,
+  RiGitBranchLine,
+  RiLoaderLine,
   RiSaveLine,
 } from '@remixicon/react';
 import {
@@ -107,7 +110,11 @@ export function SubmitEditsDialog({
   const [activeAction, setActiveAction] = useState<
     'save-locally' | 'create-pull-request' | null
   >(null);
-  const [prUrl, setPrUrl] = useState<string | null>(null);
+  const [prResult, setPrResult] = useState<{
+    url: string;
+    number?: number;
+    branch?: string;
+  } | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -128,10 +135,11 @@ export function SubmitEditsDialog({
         draft,
       });
       if (result?.pullRequestUrl) {
-        // Keep the dialog open and show the confirmation panel with the
-        // link instead of navigating away — the caller must not open the
-        // PR in a new tab itself.
-        setPrUrl(result.pullRequestUrl);
+        setPrResult({
+          url: result.pullRequestUrl,
+          number: result.pullRequestNumber,
+          branch: result.headBranch,
+        });
       }
     } catch (err: any) {
       if (err.status === 409 && err.conflicts) {
@@ -150,7 +158,7 @@ export function SubmitEditsDialog({
   };
 
   const handleClose = () => {
-    setPrUrl(null);
+    setPrResult(null);
     setCopied(false);
     setError(null);
     setTab('details');
@@ -158,9 +166,9 @@ export function SubmitEditsDialog({
   };
 
   const handleCopyLink = async () => {
-    if (!prUrl) return;
+    if (!prResult?.url) return;
     try {
-      await navigator.clipboard.writeText(prUrl);
+      await navigator.clipboard.writeText(prResult.url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -169,23 +177,55 @@ export function SubmitEditsDialog({
     }
   };
 
-  if (prUrl) {
+  // ─── PR Created success state ────────────────────────────────────────────
+  if (prResult) {
     return (
       <Dialog
         isOpen={open}
         onOpenChange={o => {
           if (!o) handleClose();
         }}
-        width={600}
+        width={560}
       >
-        <DialogHeader>Pull Request Opened</DialogHeader>
+        <DialogHeader>Pull Request Created</DialogHeader>
         <DialogBody>
-          <Text as="div">Your changes have been submitted successfully.</Text>
+          <div className={styles.successHeader}>
+            <RiCheckboxCircleLine className={styles.successIcon} size={48} />
+            <Text
+              variant="title-small"
+              as="div"
+              className={styles.successTitle}
+            >
+              {prResult.number
+                ? `PR #${prResult.number} has been created`
+                : 'Your pull request has been created'}
+            </Text>
+          </div>
+
+          <Text
+            variant="body-small"
+            color="secondary"
+            as="div"
+            style={{ marginBottom: 'var(--bui-space-4)' }}
+          >
+            Your documentation changes have been submitted for review. Copy the
+            link below to share with your team.
+          </Text>
+
+          {prResult.branch && (
+            <div className={styles.branchRow}>
+              <RiGitBranchLine size={14} />
+              <Text variant="body-x-small" color="secondary" as="span">
+                {prResult.branch}
+              </Text>
+            </div>
+          )}
+
           <div className={styles.prLinkRow}>
             <TextField
               className={styles.prLinkField}
               aria-label="Pull request link"
-              value={prUrl}
+              value={prResult.url}
               isReadOnly
             />
             <TooltipTrigger>
@@ -203,20 +243,21 @@ export function SubmitEditsDialog({
               <Tooltip>{copied ? 'Copied!' : 'Copy link'}</Tooltip>
             </TooltipTrigger>
           </div>
+
           <ButtonLink
             className={styles.prLink}
             variant="primary"
             iconEnd={<RiExternalLinkLine size={16} />}
-            href={prUrl}
+            href={prResult.url}
             target="_blank"
             rel="noopener noreferrer"
           >
-            View Pull Request
+            Open Pull Request
           </ButtonLink>
         </DialogBody>
         <DialogFooter>
           <Button variant="secondary" onPress={handleClose}>
-            Close
+            Done
           </Button>
         </DialogFooter>
       </Dialog>
@@ -251,6 +292,18 @@ export function SubmitEditsDialog({
         </TabList>
 
         <DialogBody>
+          {/* Loading overlay while creating a PR */}
+          {loading && activeAction === 'create-pull-request' && (
+            <div className={styles.submittingOverlay}>
+              <RiLoaderLine className={styles.submittingSpinner} size={28} />
+              <Text variant="body-medium" as="div">
+                Creating your pull request…
+              </Text>
+              <Text variant="body-small" color="secondary" as="div">
+                This may take a few seconds.
+              </Text>
+            </div>
+          )}
           <TabPanel id="details">
             <div className={styles.changedFiles}>
               <Text variant="body-x-small" color="secondary" as="div">

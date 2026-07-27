@@ -110,6 +110,12 @@ export function TechDocsMarkdownEditor({
     return <div className={styles.editorWrapper}>Loading editor…</div>;
   }
 
+  // No theme prop is passed to the Toast UI editor here. Instead,
+  // TechDocsMarkdownEditor.module.css targets `body[data-theme-mode="dark"]`
+  // (set by Backstage's UnifiedThemeProvider) as an ancestor selector to
+  // restyle the editor's internal elements. This tracks live theme changes
+  // without remounting the editor, which the official `theme="dark"` prop
+  // would require.
   return (
     <div className={styles.editorWrapper}>
       <EditorComponent

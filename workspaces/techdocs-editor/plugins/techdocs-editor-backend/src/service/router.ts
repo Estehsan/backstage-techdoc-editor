@@ -49,6 +49,7 @@ import {
 import { VcsProvider } from '@estehsaan/backstage-plugin-techdocs-editor-node';
 
 const MAX_IMAGE_UPLOAD_BYTES = 10 * 1024 * 1024;
+const DEFAULT_SUBMISSION_BODY_LIMIT = '25mb';
 
 /**
  * Validates that a file path supplied by the client is relative, contains only
@@ -104,7 +105,13 @@ export async function createRouter(
   const scmIntegrations = ScmIntegrations.fromConfig(config);
   // eslint-disable-next-line new-cap
   const router = Router();
-  router.use(express.json());
+  router.use(
+    express.json({
+      limit:
+        config.getOptionalString('techdocsEditor.requestBodyLimit') ??
+        DEFAULT_SUBMISSION_BODY_LIMIT,
+    }),
+  );
 
   // ─── Health ──────────────────────────────────────────────────────────────
   router.get('/health', (_req, res) => {
