@@ -484,9 +484,9 @@ describe('TechDocsEditorPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /submit changes/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Open Pull Request' }));
 
-    await screen.findByText('Pull Request Opened');
+    await screen.findByText('Pull Request Created');
     expect(
-      screen.getByRole('link', { name: /view pull request/i }),
+      screen.getByRole('link', { name: /open pull request/i }),
     ).toHaveAttribute('href', 'https://example.com/pr/1');
     expect(
       screen.getByDisplayValue('https://example.com/pr/1'),
@@ -494,7 +494,7 @@ describe('TechDocsEditorPage', () => {
 
     // Dialog stays open until the user explicitly closes it.
     expect(
-      screen.getAllByRole('button', { name: 'Close' }).length,
+      screen.getAllByRole('button', { name: 'Done' }).length,
     ).toBeGreaterThan(0);
   });
 });

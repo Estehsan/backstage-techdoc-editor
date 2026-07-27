@@ -192,9 +192,9 @@ describe('SubmitEditsDialog', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Open Pull Request' }));
 
-    await screen.findByText('Pull Request Opened');
+    await screen.findByText('Pull Request Created');
     expect(
-      screen.getByRole('link', { name: /view pull request/i }),
+      screen.getByRole('link', { name: /open pull request/i }),
     ).toHaveAttribute('href', 'https://example.com/pr/42');
     expect(
       screen.getByDisplayValue('https://example.com/pr/42'),
