@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v2.0.0...techdocs-editor-v2.0.1) (2026-07-29)
+
+
+### Bug Fixes
+
+* **techdocs-editor:** raise submission body limit and polish PR-submit UI ([b0619e0](https://github.com/Estehsan/backstage-techdoc-editor/commit/b0619e04fe68271dfa6d0c0827e2fbd2fb0f127a))
+
 # [2.0.0](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v1.4.0...techdocs-editor-v2.0.0) (2026-07-20)
 
 
