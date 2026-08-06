@@ -1,3 +1,10 @@
+# [2.1.0](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v2.0.1...techdocs-editor-v2.1.0) (2026-08-06)
+
+
+### Features
+
+* **techdocs-editor-react:** add Mermaid preview rendering ([acbd0a7](https://github.com/Estehsan/backstage-techdoc-editor/commit/acbd0a71a225c70054c036fa4e30836ad776206d))
+
 ## [2.0.1](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v2.0.0...techdocs-editor-v2.0.1) (2026-07-29)
 
 
