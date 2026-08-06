@@ -74,6 +74,12 @@ import { TechDocsMarkdownEditor } from '@estehsaan/backstage-plugin-techdocs-edi
 | `onChange`       | `(markdown: string) => void` | Yes      | Called on every edit with the current Markdown string                        |
 | `sourceMode`     | `boolean`                    | No       | When `true`, shows raw Markdown source; `false` = WYSIWYG (default: `false`) |
 
+Fenced code blocks written as ` ```mermaid ` are rendered live as diagrams in
+the preview (via [Mermaid](https://mermaid.js.org)), matching how published
+TechDocs sites render them with a `mermaid` addon. Rendering follows the
+Backstage light/dark theme automatically, and invalid or in-progress diagram
+syntax is left as plain text instead of breaking the preview.
+
 ### `SubmitEditsDialog`
 
 Modal dialog for entering a PR title, branch name, and commit message before submitting edits.

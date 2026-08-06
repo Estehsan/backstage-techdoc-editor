@@ -79,7 +79,8 @@
     "@estehsaan/backstage-plugin-techdocs-editor-common": "workspace:^",
     "@remixicon/react": "^4.6.0",
     "@toast-ui/editor": "^3.2.2",
-    "@toast-ui/react-editor": "^3.2.2"
+    "@toast-ui/react-editor": "^3.2.2",
+    "mermaid": "^11.4.1"
   },
   "peerDependencies": {
     "react": "^16.13.1 || ^17.0.0 || ^18.0.0",

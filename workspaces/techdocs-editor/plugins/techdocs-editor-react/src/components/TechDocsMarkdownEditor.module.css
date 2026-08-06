@@ -270,3 +270,30 @@
   :global(.toastui-editor-main) {
   scrollbar-color: #555 #1e1e1e;
 }
+
+/* ─── Mermaid diagrams ───────────────────────────────────────────────────────
+ * ```mermaid fences are emitted as `.mermaid` containers and rendered to SVG
+ * by Mermaid after the preview paints. Center them and keep the SVG within the
+ * preview width. Until Mermaid processes a block it shows the raw source, so we
+ * present the unprocessed state as a neutral, monospaced placeholder.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.editorWrapper :global(.mermaid) {
+  display: flex;
+  justify-content: center;
+  margin: 12px 0;
+}
+
+.editorWrapper :global(.mermaid[data-processed='true']) {
+  white-space: normal;
+}
+
+.editorWrapper :global(.mermaid:not([data-processed='true'])) {
+  white-space: pre-wrap;
+  font-family: monospace;
+  opacity: 0.6;
+}
+
+.editorWrapper :global(.mermaid svg) {
+  max-width: 100%;
+  height: auto;
+}
