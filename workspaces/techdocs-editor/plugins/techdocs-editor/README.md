@@ -119,6 +119,12 @@ import { TechDocsEditPageAddon } from '@estehsaan/backstage-plugin-techdocs-edit
 | `TechDocsEditorClient`        | Class             | Default implementation of `TechDocsEditorApi`                    |
 | `TechDocsEditorApi`           | TypeScript type   | Interface for the editor API client                              |
 
+> **Note:** `EntityEditorContent` and `EditorPageContent` are also exported from
+> this package (required to satisfy API report tooling), but they are internal
+> implementation details shared with the `/alpha` entry point — use
+> `EntityTechdocsEditorContent` and `TechdocsEditorPage` instead when wiring up
+> the classic frontend system.
+
 ### `/alpha` exports (New Frontend System only)
 
 The `/alpha` subpath exports the NFS plugin object as the **default export**:
