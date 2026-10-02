@@ -24,6 +24,7 @@ import {
   techdocsEditorPlugin,
 } from './plugin';
 import { editorRouteRef } from './routes';
+import { TechDocsEditPageAddon } from './addons/TechDocsEditPageAddon';
 
 jest.mock('@estehsaan/backstage-plugin-techdocs-editor-react', () => ({
   ...jest.requireActual('@estehsaan/backstage-plugin-techdocs-editor-react'),
@@ -50,6 +51,13 @@ describe('techdocsEditorPlugin (classic)', () => {
     expect(techdocsEditorPlugin.routes.root).toBe(editorRouteRef);
     expect(TechdocsEditorPage).toBeDefined();
     expect(EntityTechdocsEditorContent).toBeDefined();
+  });
+
+  it('exports the edit-page addon as a renderable component', () => {
+    // A raw addon extension object (not passed through `plugin.provide`)
+    // makes React throw "Element type is invalid" when mounted in the
+    // classic TechDocsAddons.
+    expect(typeof TechDocsEditPageAddon).toBe('function');
   });
 
   it('renders the routable editor page from route params and the file query', async () => {

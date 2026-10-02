@@ -6,7 +6,6 @@
 /// <reference types="react" />
 
 import { BackstagePlugin } from '@backstage/core-plugin-api';
-import { Extension } from '@backstage/core-plugin-api';
 import { JSX as JSX_2 } from 'react/jsx-runtime';
 import { RouteRef } from '@backstage/core-plugin-api';
 import { TechDocsEditorApi } from '@estehsaan/backstage-plugin-techdocs-editor-react';
@@ -45,5 +44,5 @@ export const techdocsEditorPlugin: BackstagePlugin<
 >;
 
 // @public
-export const TechDocsEditPageAddon: Extension<() => JSX.Element | null>;
+export const TechDocsEditPageAddon: () => JSX.Element | null;
 ```

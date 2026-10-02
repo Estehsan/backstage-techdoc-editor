@@ -23,6 +23,7 @@ import {
 } from '@backstage/plugin-techdocs-react';
 import { useRouteRef } from '@backstage/core-plugin-api';
 import { editorRouteRef } from '../routes';
+import { techdocsEditorPlugin } from '../plugin';
 import { parseEntityRef } from '@backstage/catalog-model';
 
 /**
@@ -40,11 +41,13 @@ import { parseEntityRef } from '@backstage/catalog-model';
  *
  * @public
  */
-export const TechDocsEditPageAddon = createTechDocsAddonExtension({
-  name: 'EditPage',
-  location: TechDocsAddonLocations.Subheader,
-  component: TechDocsEditPageAddonComponent,
-});
+export const TechDocsEditPageAddon = techdocsEditorPlugin.provide(
+  createTechDocsAddonExtension({
+    name: 'EditPage',
+    location: TechDocsAddonLocations.Subheader,
+    component: TechDocsEditPageAddonComponent,
+  }),
+);
 
 function TechDocsEditPageAddonComponent() {
   const { entityRef, shadowRoot } = useTechDocsReaderPage();
