@@ -244,13 +244,24 @@ function resolveVcsSourceFromUrl(
     defaultBranch = pathParts[3]; // after 'tree'
     docsDir = url.hash ? url.hash.slice(1) : undefined;
   } else if (integration.type === 'gitlab') {
-    const treeIdx = pathParts.indexOf('tree');
-    const repo =
-      treeIdx > 1
-        ? pathParts.slice(0, treeIdx - 1).join('/')
-        : pathParts.slice(0, 2).join('/');
-    repoUrl = `${url.protocol}//${url.host}/${repo}`;
-    defaultBranch = treeIdx >= 0 ? pathParts[treeIdx + 1] : undefined;
+    // GitLab project paths can be nested arbitrarily deep
+    // (group/sub1/sub2/project). Web URLs always separate the project path
+    // from the ref with `/-/`, e.g. `.../project/-/tree/main/docs` or
+    // `.../project/-/blob/main/catalog-info.yaml`.
+    const separatorIdx = pathParts.indexOf('-');
+    const projectParts =
+      separatorIdx >= 0 ? pathParts.slice(0, separatorIdx) : pathParts;
+    if (projectParts.length < 2) {
+      throw new InputError(
+        `Cannot parse project path from GitLab URL: ${target}`,
+      );
+    }
+    const refKind = separatorIdx >= 0 ? pathParts[separatorIdx + 1] : undefined;
+    repoUrl = `${url.protocol}//${url.host}/${projectParts.join('/')}`;
+    defaultBranch =
+      refKind === 'tree' || refKind === 'blob'
+        ? pathParts[separatorIdx + 2]
+        : undefined;
     docsDir = url.hash ? url.hash.slice(1) : undefined;
   } else {
     repoUrl = `${url.protocol}//${url.host}${url.pathname

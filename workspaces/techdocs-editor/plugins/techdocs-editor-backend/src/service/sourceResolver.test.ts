@@ -179,6 +179,105 @@ describe('resolveSource', () => {
     });
   });
 
+  describe('GitLab URLs', () => {
+    const gitlabIntegrations = ScmIntegrations.fromConfig(
+      new ConfigReader({
+        integrations: {
+          gitlab: [
+            {
+              host: 'gitlab.example.com',
+              apiBaseUrl: 'https://gitlab.example.com/api/v4',
+              token: 'fake',
+            },
+          ],
+        },
+      }),
+    );
+
+    function gitlabEntity(annotations: Record<string, string>): Entity {
+      return {
+        apiVersion: 'backstage.io/v1alpha1',
+        kind: 'Component',
+        metadata: { name: 'gitlab-component', annotations },
+        spec: { type: 'service', lifecycle: 'experimental', owner: 'guest' },
+      };
+    }
+
+    it.each([
+      [
+        'a bare nested-group project URL',
+        'url:https://gitlab.example.com/group/sub1/sub2/project',
+        'https://gitlab.example.com/group/sub1/sub2/project',
+        undefined,
+      ],
+      [
+        'a nested-group tree URL',
+        'url:https://gitlab.example.com/group/sub/project/-/tree/main/docs',
+        'https://gitlab.example.com/group/sub/project',
+        'main',
+      ],
+      [
+        'a top-level group/project tree URL',
+        'url:https://gitlab.example.com/group/project/-/tree/develop',
+        'https://gitlab.example.com/group/project',
+        'develop',
+      ],
+    ])(
+      'resolves %s',
+      async (_case, techdocsRef, expectedRepoUrl, expectedBranch) => {
+        const result = await resolveSource(
+          gitlabEntity({ 'backstage.io/techdocs-ref': techdocsRef }),
+          gitlabIntegrations,
+          reader,
+          config,
+        );
+
+        expect(result).toEqual({
+          vcs: {
+            repoUrl: expectedRepoUrl,
+            docsDir: undefined,
+            defaultBranch: expectedBranch,
+          },
+        });
+      },
+    );
+
+    it('resolves dir: against a nested-group blob source-location (GitLab discovery pattern)', async () => {
+      // The GitLab discovery provider sets source-location to a `/-/blob/` URL.
+      const result = await resolveSource(
+        gitlabEntity({
+          'backstage.io/techdocs-ref': 'dir:.',
+          'backstage.io/source-location':
+            'url:https://gitlab.example.com/group/sub/project/-/blob/main/',
+        }),
+        gitlabIntegrations,
+        reader,
+        config,
+      );
+
+      expect(result).toEqual({
+        vcs: {
+          repoUrl: 'https://gitlab.example.com/group/sub/project',
+          docsDir: undefined,
+          defaultBranch: 'main',
+        },
+      });
+    });
+
+    it('rejects a GitLab URL without a project path', async () => {
+      await expect(
+        resolveSource(
+          gitlabEntity({
+            'backstage.io/techdocs-ref': 'url:https://gitlab.example.com/group',
+          }),
+          gitlabIntegrations,
+          reader,
+          config,
+        ),
+      ).rejects.toThrow(InputError);
+    });
+  });
+
   describe('resolveSource additive behavior', () => {
     it('populates both local and vcs when dir: annotation and a resolvable project-slug are both present', async () => {
       await fs.mkdir(path.join(sourceRoot, 'docs'));
