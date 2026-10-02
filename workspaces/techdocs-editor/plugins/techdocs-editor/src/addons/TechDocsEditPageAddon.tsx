@@ -75,11 +75,15 @@ function TechDocsEditPageAddonComponent() {
 
   return (
     <TooltipTrigger>
+      {/* The subheader is a stretching flex row whose other addons are
+          transparent icon buttons: center the fixed-height button vertically
+          and keep it transparent so it doesn't read as a floating card. */}
       <ButtonLink
         size="small"
-        variant="secondary"
+        variant="tertiary"
         iconStart={<RiEditLine size={16} />}
         href={editorUrl}
+        style={{ alignSelf: 'center' }}
       >
         Edit this page
       </ButtonLink>
