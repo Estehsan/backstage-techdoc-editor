@@ -1,3 +1,12 @@
+## [2.1.1](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v2.1.0...techdocs-editor-v2.1.1) (2026-11-09)
+
+
+### Bug Fixes
+
+* **techdocs-editor-backend:** resolve nested GitLab groups and blob URLs ([2ec3679](https://github.com/Estehsan/backstage-techdoc-editor/commit/2ec3679b4653d3ac42003dae1c652d6e27baf449)), closes [#25](https://github.com/Estehsan/backstage-techdoc-editor/issues/25)
+* **techdocs-editor:** align the edit-page button with the other subheader addons ([50e4031](https://github.com/Estehsan/backstage-techdoc-editor/commit/50e4031e6806ce2f7940fd722900024a9f5c2fd0))
+* **techdocs-editor:** make the edit-page addon renderable in the classic frontend ([aea8347](https://github.com/Estehsan/backstage-techdoc-editor/commit/aea834700ecdf720926e78cf3c6ecd420e7930a2))
+
 # [2.1.0](https://github.com/Estehsan/backstage-techdoc-editor/compare/techdocs-editor-v2.0.1...techdocs-editor-v2.1.0) (2026-08-06)
 
 
